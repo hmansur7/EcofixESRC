@@ -13,7 +13,6 @@ import {
 const LearningDashboard = () => {
     const [resources, setResources] = useState([]);
 
-    // Fetch learning resources from the API
     useEffect(() => {
         API.get('contents/')
             .then((response) => {
@@ -43,6 +42,9 @@ const LearningDashboard = () => {
                                     <Typography variant="body2" color="text.secondary">
                                         {resource.description}
                                     </Typography>
+                                    <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                                        {resource.content_type}
+                                    </Typography>
                                 </CardContent>
                                 <CardActions>
                                     <Button
@@ -50,7 +52,7 @@ const LearningDashboard = () => {
                                         color="primary"
                                         onClick={() => window.open(resource.url, '_blank')}
                                     >
-                                        Learn More
+                                        View {resource.content_type}
                                     </Button>
                                 </CardActions>
                             </Card>
