@@ -5,7 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-import Learning from "./components/Learning";
+import Learning from "./components/LearningDashboard";
 import Events from "./components/Events";
 import Progress from "./components/Progress";
 

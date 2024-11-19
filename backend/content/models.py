@@ -1,3 +1,4 @@
+
 from django.db import models
 
 class User(models.Model):
@@ -11,18 +12,23 @@ class User(models.Model):
 
 
 class Content(models.Model):
-    CONTENT_TYPES = [
-        ('Article', 'Article'),
-        ('Video', 'Video'),
-        ('Webinar', 'Webinar'),
-        ('Guide', 'Guide'),
-    ]
-
+    content_id = models.AutoField(primary_key=True)  
     title = models.CharField(max_length=255)
-    description = models.TextField()
-    content_type = models.CharField(max_length=20, choices=CONTENT_TYPES)
+    description = models.TextField(null=True, blank=True)
+    content_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('Article', 'Article'),
+            ('Video', 'Video'),
+            ('Webinar', 'Webinar'),
+            ('Guide', 'Guide'),
+        ],
+    )
     url = models.URLField(max_length=2083)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'content' 
 
     def __str__(self):
         return self.title
