@@ -30,7 +30,7 @@ const LearningDashboard = () => {
             </Typography>
             <Grid container spacing={3}>
                 {resources.length === 0 ? (
-                    <Typography>No learning resources found.</Typography>
+                    <Typography paddingTop={2} paddingLeft={3.2}>No learning resources found.</Typography>
                 ) : (
                     resources.map((resource) => (
                         <Grid item xs={12} sm={6} md={4} key={resource.id}>
