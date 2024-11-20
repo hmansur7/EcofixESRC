@@ -8,6 +8,9 @@ import {
 import Learning from "./components/LearningDashboard";
 import Events from "./components/Events";
 import Progress from "./components/Progress";
+import HomePage from "./components/Home";
+import Login from "./components/Login";
+import Register from "./components/Register";
 
 function App() {
   const navbarLinks = [
@@ -17,12 +20,14 @@ function App() {
   ];
 
   return (
-    <Router>
-      <Navbar title="User Dashboard" links={navbarLinks} />
-
-      
+    <Router>      
       <Routes>
-        <Route path="/" element={<Navigate to="/learning" />} />
+        <Route path="/" element={<HomePage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+      </Routes>
+      <Navbar title="User Dashboard" links={navbarLinks} />
+      <Routes>
         <Route path="/learning" element={<Learning />} />
         <Route path="/events" element={<Events />} />
         <Route path="/progress" element={<Progress />} />
