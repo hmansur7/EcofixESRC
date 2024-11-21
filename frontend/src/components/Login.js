@@ -1,13 +1,33 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Login = () => {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    alert('Logged in successfully!');
-    navigate('/'); // Redirect to Home page
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post('http://localhost:8000/api/users/login/', {
+        email,
+        password,
+      });
+
+      alert('Login successful!');
+      navigate('/dashboard');  // Redirect to another page after successful login
+    } catch (err) {
+      setError(err.response?.data?.error || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -16,9 +36,23 @@ const Login = () => {
       <button onClick={() => navigate('/')} style={styles.backButton}>
         ← Home
       </button>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input type="email" placeholder="Email" style={styles.input} required />
-        <input type="password" placeholder="Password" style={styles.input} required />
+      <form onSubmit={handleLogin} style={styles.form}>
+      <input
+          type="text"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={styles.input}
+          required
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={styles.input}
+          required
+        />
         <button type="submit" style={styles.submitButton}>
           Login
         </button>

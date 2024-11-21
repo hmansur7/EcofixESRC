@@ -1,27 +1,88 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const Register = () => {
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleRegister = async (e) => {
     e.preventDefault();
-    alert('Registered successfully!');
-    navigate('/learning'); // Redirect to Home page
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await axios.post('http://localhost:8000/api/users/register/', {
+        name,
+        email,
+        password,
+      });
+
+      // If registration is successful, redirect to login page or dashboard
+      alert(response.data.message);
+      navigate('/login');  // Redirect to login page after successful registration
+    } catch (err) {
+      // Handle errors, like email already exists or any backend issue
+      setError(err.response?.data?.error || 'Registration failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div style={styles.formContainer}>
+    <div style={styles.container}>
       <h2>Register</h2>
       <button onClick={() => navigate('/')} style={styles.backButton}>
         ← Home
       </button>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <input type="text" placeholder="Name" style={styles.input} required />
-        <input type="email" placeholder="Email" style={styles.input} required />
-        <input type="password" placeholder="Password" style={styles.input} required />
-        <button type="submit" style={styles.submitButton}>
-          Register
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <form onSubmit={handleRegister} style={styles.form}>
+        <input
+          type="text"
+          placeholder="Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          style={styles.input}
+        />
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          style={styles.input}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          style={styles.input}
+        />
+        <input
+          type="password"
+          placeholder="Confirm Password"
+          value={confirmPassword}
+          onChange={(e) => setConfirmPassword(e.target.value)}
+          required
+          style={styles.input}
+        />
+        <button type="submit" style={styles.submitButton} disabled={loading}>
+          {loading ? 'Registering...' : 'Register'}
         </button>
       </form>
     </div>
@@ -29,18 +90,17 @@ const Register = () => {
 };
 
 const styles = {
-  formContainer: {
+  container: {
     display: 'flex',
     flexDirection: 'column',
-    alignItems: 'center',
     justifyContent: 'center',
-    height: '100vh',
-    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    minHeight: '100vh',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.5rem',
+    gap: '1rem',
     width: '300px',
   },
   input: {
@@ -50,10 +110,10 @@ const styles = {
   },
   submitButton: {
     padding: '0.5rem',
-    borderRadius: '5px',
+    backgroundColor: '#4CAF50',
+    color: '#fff',
     border: 'none',
-    backgroundColor: '#007bff',
-    color: 'white',
+    borderRadius: '5px',
     cursor: 'pointer',
   },
   backButton: {
