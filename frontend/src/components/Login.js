@@ -22,7 +22,7 @@ const Login = () => {
       });
 
       alert('Login successful!');
-      navigate('/dashboard');  // Redirect to another page after successful login
+      navigate('/Learning');  // Redirect to another page after successful login
     } catch (err) {
       setError(err.response?.data?.error || 'Login failed');
     } finally {

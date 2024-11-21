@@ -32,7 +32,7 @@ const Register = () => {
 
       // If registration is successful, redirect to login page or dashboard
       alert(response.data.message);
-      navigate('/login');  // Redirect to login page after successful registration
+      navigate('/Learning');  // Redirect to login page after successful registration
     } catch (err) {
       // Handle errors, like email already exists or any backend issue
       setError(err.response?.data?.error || 'Registration failed');
