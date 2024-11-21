@@ -7,7 +7,7 @@ const Register = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     alert('Registered successfully!');
-    navigate('/learning'); // Redirect to Home page
+    navigate('/Learning'); 
   };
 
   return (
