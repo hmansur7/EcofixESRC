@@ -7,7 +7,7 @@ const Login = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
     alert('Logged in successfully!');
-    navigate('/'); // Redirect to Home page
+    navigate('/Learning'); // Redirect to Home page
   };
 
   return (
