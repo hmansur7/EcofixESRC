@@ -11,6 +11,10 @@ from .serializers import (
     UserSerializer, ContentSerializer, UserProgressSerializer,
     EventSerializer, EventRegistrationSerializer
 )
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -38,6 +42,7 @@ class RegisterView(APIView):
 
     def post(self, request):
         # Extract data from the request
+        data = request.data
         name = request.data.get('name')
         email = request.data.get('email')
         password = request.data.get('password')
@@ -52,8 +57,11 @@ class RegisterView(APIView):
 
         # Create the user if not already existing
         try:
-            user = User.objects.create_user(username=email, email=email, password=password)
-            user.first_name = name
+            user = User.objects.create(
+                name=data['name'],
+                email=data['email'],
+                password=make_password(data['password']),  # Hash the password
+            )
             user.save()
             return Response({"message": "User registered successfully!"}, status=status.HTTP_201_CREATED)
         except Exception as e:
@@ -67,7 +75,7 @@ class LoginView(APIView):
         if not email or not password:
             return Response({"error": "Email and password are required."}, status=status.HTTP_400_BAD_REQUEST)
 
-        user = authenticate(username=email, password=password)
+        user = authenticate(request, username=email, password=password)
 
         if user:
             # Get or create a token for the authenticated user
