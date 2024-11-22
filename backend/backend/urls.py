@@ -5,7 +5,7 @@ from content.views import (
     UserViewSet, CoursesViewSet, ProgressViewSet, EventsViewSet,
     RegisterView, LoginView, AdminUserListView,
     AdminAddCourseView, AdminRemoveCourseView, AdminAddEventView, AdminRemoveEventView, 
-    AdminListCoursesView, AdminListEventsView
+    AdminListCoursesView, AdminListEventsView, LessonsViewSet, LessonsListView, GetCourseProgressView, UpdateLessonProgressView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -14,8 +14,8 @@ from django.conf.urls.static import static
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')  # User management
 router.register(r'courses', CoursesViewSet, basename='course')  # Public course endpoints
-router.register(r'progress', ProgressViewSet, basename='progress')  # User progress
 router.register(r'events', EventsViewSet, basename='event')  # Public event endpoints
+router.register(r'lessons', LessonsViewSet, basename='lesson')
 
 urlpatterns = [
     # Admin site
@@ -24,6 +24,9 @@ urlpatterns = [
     # Authentication endpoints
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
+    path('api/courses/<int:course_id>/lessons/', LessonsListView.as_view(), name='course-lessons-list'),
+    path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
+    path('api/lessons/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
 
     # Admin-specific endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),

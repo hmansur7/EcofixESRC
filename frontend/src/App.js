@@ -15,6 +15,7 @@ import NotFound from "./components/Notfound";
 import PrivateRoute from "./middleware/Private";
 import AdminRoute from "./middleware/Admin"; // Import the AdminRoute middleware
 import AdminDashboard from "./components/AdminDashboard"; // Import the AdminDashboard
+import LessonsList from "./components/LessonList";
 
 function App() {
   const navbarLinks = [
@@ -48,6 +49,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/lessons" element={<LessonsList />} />
 
           {/* User Private Routes */}
           <Route

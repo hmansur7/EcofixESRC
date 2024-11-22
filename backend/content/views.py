@@ -8,8 +8,8 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
-from .models import User, Courses, Progress, Events
-from .serializers import UserSerializer, CoursesSerializer, ProgressSerializer, EventsSerializer
+from .models import User, Courses, CourseProgress, Events, Lessons, LessonProgress
+from .serializers import UserSerializer, CoursesSerializer, LessonProgressSerializer, CourseProgressSerializer, EventsSerializer, LessonsSerializer
 from .permissions import IsAdmin  # Import the custom permission class
 
 User = get_user_model()
@@ -24,11 +24,6 @@ class CoursesViewSet(viewsets.ModelViewSet):
     queryset = Courses.objects.all()
     serializer_class = CoursesSerializer
     permission_classes = [IsAuthenticated]
-
-
-class ProgressViewSet(viewsets.ModelViewSet):
-    queryset = Progress.objects.all()
-    serializer_class = ProgressSerializer
 
 
 class EventsViewSet(viewsets.ModelViewSet):
@@ -88,6 +83,55 @@ class EventListView(APIView):
         serializer = EventsSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class LessonsViewSet(viewsets.ModelViewSet):
+    queryset = Lessons.objects.all()
+    serializer_class = LessonsSerializer
+
+class LessonsListView(APIView):
+    def get(self, request, course_id):
+        # Filter lessons by the provided course_id
+        lessons = Lessons.objects.filter(course_id=course_id).order_by('order')
+        serializer = LessonsSerializer(lessons, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UpdateLessonProgressView(APIView):
+    def post(self, request, lesson_id):
+        user = request.user
+        lesson = Lessons.objects.get(id=lesson_id)
+        
+        # Create or update the lesson progress for the user
+        lesson_progress, created = LessonProgress.objects.get_or_create(user=user, lesson=lesson)
+        lesson_progress.completed = request.data.get('completed', False)
+        lesson_progress.save()
+        
+        # Update the course progress percentage
+        self.update_course_progress(user, lesson.course)
+
+        return Response({"message": "Progress updated successfully"}, status=status.HTTP_200_OK)
+
+    def update_course_progress(self, user, course):
+        # Get all lessons for this course
+        lessons = Lessons.objects.filter(course=course)
+        total_lessons = lessons.count()
+        completed_lessons = LessonProgress.objects.filter(user=user, lesson__in=lessons, completed=True).count()
+        
+        # Calculate progress as percentage
+        progress_percentage = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
+        
+        # Update or create course progress record
+        course_progress, created = CourseProgress.objects.get_or_create(user=user, course=course)
+        course_progress.progress_percentage = progress_percentage
+        course_progress.save()
+
+class GetCourseProgressView(APIView):
+    def get(self, request, course_id):
+        user = request.user
+        try:
+            course_progress = CourseProgress.objects.get(user=user, course_id=course_id)
+            serializer = CourseProgressSerializer(course_progress)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except CourseProgress.DoesNotExist:
+            return Response({"error": "Progress not found"}, status=status.HTTP_404_NOT_FOUND)
 
 # Admin Views
 class AdminUserListView(ListAPIView):

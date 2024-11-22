@@ -44,33 +44,34 @@ class Courses(models.Model):
     def __str__(self):
         return self.title
 
-class Resources(models.Model):
-    resource_id = models.AutoField(primary_key=True)
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='resources')
-    resource_type = models.CharField(max_length=10, choices=[
-        ('pdf', 'PDF'),
-        ('docx', 'Word Document (DOCX)'),
-        ('pptx', 'PowerPoint (PPTX)'),
-        ('txt', 'Text File (TXT)'),
-        ('jpg', 'JPEG Image'),
-        ('png', 'PNG Image'),
-        ('mp4', 'MP4 Video'),
-        ('weburl', 'Website'),
-        ('other', 'Other'),
-    ], default='other')
+class Lessons(models.Model):
+    lesson_id = models.AutoField(primary_key=True)
+    course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='lessons')  # ForeignKey to Courses model
     title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)
-    attachment = models.FileField(upload_to='resources/attachments/', null=True, blank=True)
+    description = models.TextField(null=True, blank=True)  # Optional description of the lesson
+    content = models.TextField(null=True, blank=True)  # You can store text content, or this could be replaced with a file field
+    order = models.PositiveIntegerField(default=0)  # Order of lessons in a course (useful for sequencing lessons)
+    
+    def __str__(self):
+        return f"Lesson: {self.title} (Course: {self.course.title})"
 
-    def clean(self):
-        if self.attachment:
-            file_extension = os.path.splitext(self.attachment.name)[1][1:].lower()
-            if self.resource_type == 'pdf' and file_extension != 'pdf':
-                raise ValidationError('File must be a PDF.')
-            # Add other validation cases as necessary
+class CourseProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Courses, on_delete=models.CASCADE)
+    progress_percentage = models.FloatField(default=0.0)  # Store progress percentage
 
     def __str__(self):
-        return f"{self.title} - {self.resource_type}"
+        return f"{self.user.name} - {self.course.title} - {self.progress_percentage}%"
+
+class LessonProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lessons, on_delete=models.CASCADE)
+    completed = models.BooleanField(default=False)  # Track whether the lesson is completed
+
+    def __str__(self):
+        return f"{self.user.name} - {self.lesson.title} - {'Completed' if self.completed else 'Not Completed'}"
+
+    
 
 class Events(models.Model):
     event_id = models.AutoField(primary_key=True)
@@ -86,17 +87,3 @@ class Events(models.Model):
 
     def __str__(self):
         return f"{self.title} on {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}"
-
-class Progress(models.Model):
-    progress_id = models.AutoField(primary_key=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='progresses')
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='progress')
-    completion_percentage = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'course'], name='unique_user_course_progress')
-        ]
-
-    def __str__(self):
-        return f"{self.user.name} - {self.course.title} - {self.completion_percentage}%"
