@@ -14,7 +14,12 @@ const HomePage = () => {
   const navigate = useNavigate();
 
   return (
-    <Container component="main" maxWidth="xl" disableGutters>
+    <Container
+      component="main"
+      maxWidth={false}
+      disableGutters
+      sx={{ padding: 0 }}
+    >
       <CssBaseline />
       <Box
         sx={{
@@ -56,7 +61,9 @@ const HomePage = () => {
             marginBottom: 4,
           }}
         >
-          Expand your knowledge of sustainability and eco-friendly practices and register for our events. Join us on our mission of moving towards a greener future.
+          Expand your knowledge of sustainability and eco-friendly practices
+          and register for our events. Join us on our mission of moving towards
+          a greener future.
         </Typography>
         <Grid container spacing={2} justifyContent="center">
           <Grid item>
