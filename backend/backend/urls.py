@@ -8,17 +8,17 @@ from content.views import (
 from django.conf import settings
 from django.conf.urls.static import static
 
+# DRF Router for ViewSets
 router = DefaultRouter()
-router.register(r'users', UserViewSet)
-router.register(r'courses', CoursesViewSet)
-router.register(r'progress', ProgressViewSet)
-router.register(r'events', EventsViewSet)
+router.register(r'users', UserViewSet, basename='user')
+router.register(r'courses', CoursesViewSet, basename='course')
+router.register(r'progress', ProgressViewSet, basename='progress')
+router.register(r'events', EventsViewSet, basename='event')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/users/register/', RegisterView.as_view(), name='register'),
-    path('api/users/login/', LoginView.as_view(), name='login'),
-    path('api/', include(router.urls)),
-    path('', include('content.urls')),
-    path('api/users/events/', EventListView.as_view(), name='event-list'),
+    path('api/auth/register/', RegisterView.as_view(), name='register'),  # Registration route
+    path('api/auth/login/', LoginView.as_view(), name='login'),  # Login route
+    path('api/auth/events/', EventListView.as_view(), name='event-list'),  # Event list route
+    path('api/', include(router.urls)),  # Include router-based paths
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

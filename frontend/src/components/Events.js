@@ -11,8 +11,14 @@ const EventsPage = () => {
     // Fetch events from the backend
     useEffect(() => {
         const fetchEvents = async () => {
+            const token = localStorage.getItem('authToken'); // Fetch the token from localStorage
             try {
-                const response = await fetch('/api/users/events/'); // Replace with your actual API endpoint
+                const response = await fetch('http://127.0.0.1:8000/api/auth/events/', {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Token ${token}`, // Include the token in the headers
+                    },
+                });
                 if (!response.ok) {
                     throw new Error('Failed to fetch events');
                 }

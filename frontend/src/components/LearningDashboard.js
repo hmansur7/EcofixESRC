@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import API from '../api'; // Axios instance for API requests
+import React, { useState, useEffect } from "react";
+import { getResources } from "../api"; // Import the new named export
 import {
     Box,
     Grid,
@@ -8,18 +8,18 @@ import {
     CardActions,
     Typography,
     Button,
-} from '@mui/material';
+} from "@mui/material";
 
 const LearningDashboard = () => {
     const [resources, setResources] = useState([]);
 
     useEffect(() => {
-        API.get('contents/')
-            .then((response) => {
-                setResources(response.data);
+        getResources()
+            .then((data) => {
+                setResources(data);
             })
             .catch((error) => {
-                console.error('Error fetching learning resources:', error);
+                console.error("Error fetching learning resources:", error);
             });
     }, []);
 
@@ -30,11 +30,13 @@ const LearningDashboard = () => {
             </Typography>
             <Grid container spacing={3}>
                 {resources.length === 0 ? (
-                    <Typography paddingTop={2} paddingLeft={3.2}>No learning resources found.</Typography>
+                    <Typography paddingTop={2} paddingLeft={3.2}>
+                        No learning resources found.
+                    </Typography>
                 ) : (
                     resources.map((resource) => (
                         <Grid item xs={12} sm={6} md={4} key={resource.id}>
-                            <Card sx={{ height: '100%' }}>
+                            <Card sx={{ height: "100%" }}>
                                 <CardContent>
                                     <Typography variant="h5" component="div">
                                         {resource.title}
@@ -42,7 +44,12 @@ const LearningDashboard = () => {
                                     <Typography variant="body2" color="text.secondary">
                                         {resource.description}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary" display="block" mt={1}>
+                                    <Typography
+                                        variant="caption"
+                                        color="text.secondary"
+                                        display="block"
+                                        mt={1}
+                                    >
                                         {resource.content_type}
                                     </Typography>
                                 </CardContent>
@@ -50,7 +57,7 @@ const LearningDashboard = () => {
                                     <Button
                                         size="small"
                                         color="primary"
-                                        onClick={() => window.open(resource.url, '_blank')}
+                                        onClick={() => window.open(resource.url, "_blank")}
                                     >
                                         View {resource.content_type}
                                     </Button>

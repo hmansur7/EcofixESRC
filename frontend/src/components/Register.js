@@ -1,133 +1,125 @@
-import React, { useState } from 'react';
-import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { registerUser } from "../api";
+import {
+  Box,
+  Button,
+  TextField,
+  Typography,
+  Alert,
+  CssBaseline,
+  Container,
+} from "@mui/material";
+import { PersonAdd } from "@mui/icons-material";
 
 const Register = () => {
-  const navigate = useNavigate();
+  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [error, setError] = useState("");
+  const navigate = useNavigate(); // Initialize navigate
 
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const handleRegister = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (password !== confirmPassword) {
-      setError('Passwords do not match');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-
     try {
-      const response = await axios.post('http://localhost:8000/api/users/register/', {
-        name,
-        email,
-        password,
-      });
-
-      // If registration is successful, redirect to login page or dashboard
-      alert(response.data.message);
-      navigate('/Learning');  // Redirect to login page after successful registration
-    } catch (err) {
-      // Handle errors, like email already exists or any backend issue
-      setError(err.response?.data?.error || 'Registration failed');
-    } finally {
-      setLoading(false);
+      const response = await registerUser(
+        formData.name,
+        formData.email,
+        formData.password
+      );
+      localStorage.setItem("authToken", response.token); // Optionally store the token
+      navigate("/learning"); // Redirect to LearningDashboard on success
+    } catch (error) {
+      setError(error.message);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h2>Register</h2>
-      <button onClick={() => navigate('/')} style={styles.backButton}>
-        ← Home
-      </button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleRegister} style={styles.form}>
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          style={styles.input}
-        />
-        <button type="submit" style={styles.submitButton} disabled={loading}>
-          {loading ? 'Registering...' : 'Register'}
-        </button>
-      </form>
-    </div>
+    <Container component="main" maxWidth="xs">
+      <CssBaseline />
+      <Box
+        sx={{
+          marginTop: 8,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+        }}
+      >
+        <PersonAdd sx={{ fontSize: 50, color: "green" }} />
+        <Typography component="h1" variant="h5" sx={{ mt: 1, fontWeight: "bold" }}>
+          Register
+        </Typography>
+        <Box
+          component="form"
+          onSubmit={handleSubmit}
+          noValidate
+          sx={{
+            mt: 3,
+            backgroundColor: "#f5f5f5",
+            padding: 3,
+            borderRadius: 2,
+            boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+          }}
+        >
+          <TextField
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            id="name"
+            label="Name"
+            name="name"
+            autoComplete="name"
+            autoFocus
+            onChange={handleChange}
+          />
+          <TextField
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            onChange={handleChange}
+          />
+          <TextField
+            variant="outlined"
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            onChange={handleChange}
+          />
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{
+              mt: 2,
+              mb: 2,
+              backgroundColor: "green",
+              "&:hover": { backgroundColor: "darkgreen" },
+            }}
+          >
+            Register
+          </Button>
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
+        </Box>
+      </Box>
+    </Container>
   );
-};
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'center',
-    minHeight: '100vh',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-    width: '300px',
-  },
-  input: {
-    padding: '0.5rem',
-    borderRadius: '5px',
-    border: '1px solid #ccc',
-  },
-  submitButton: {
-    padding: '0.5rem',
-    backgroundColor: '#4CAF50',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '5px',
-    cursor: 'pointer',
-  },
-  backButton: {
-    position: 'absolute',
-    top: '10px',
-    left: '10px',
-    padding: '0.5rem 1rem',
-    borderRadius: '5px',
-    border: 'none',
-    backgroundColor: '#6c757d',
-    color: 'white',
-    cursor: 'pointer',
-    fontSize: '0.9rem',
-  },
 };
 
 export default Register;

@@ -1,19 +1,58 @@
-import axios from 'axios';
+const BASE_URL = "http://127.0.0.1:8000/api/auth/";
 
+// Utility function to handle API requests
+const request = async (url, method = "GET", body = null, token = null) => {
+    const headers = {
+        "Content-Type": "application/json",
+    };
 
-const API = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/',
-    timeout: 10000, 
-});
+    if (token) {
+        headers["Authorization"] = `Token ${token}`;
+    }
 
+    const options = {
+        method,
+        headers,
+    };
 
+    if (body) {
+        options.body = JSON.stringify(body);
+    }
 
-export const fetchLearningResources = () => API.get('courses/');
-export const fetchEvents = () => API.get('events/');
-export const fetchUserProgress = () => API.get('progress/');
+    try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || "An error occurred");
+        }
+        return await response.json();
+    } catch (error) {
+        throw error;
+    }
+};
 
-export const createLearningResource = (data) => API.post('courses/', data);
-export const updateLearningResource = (id, data) => API.put(`courses/${id}/`, data);
-export const deleteLearningResource = (id) => API.delete(`courses/${id}/`);
+// Register a new user
+export const registerUser = async (name, email, password) => {
+    const url = `${BASE_URL}register/`;
+    const body = { name, email, password };
+    return await request(url, "POST", body);
+};
 
-export default API;
+// Log in a user
+export const loginUser = async (email, password) => {
+    const url = `${BASE_URL}login/`;
+    const body = { email, password };
+    return await request(url, "POST", body);
+};
+
+// Get list of events (requires authentication)
+export const getEvents = async (token) => {
+    const url = `${BASE_URL}events/`;
+    return await request(url, "GET", null, token);
+};
+
+// Fetch learning resources
+export const getResources = async (token = null) => {
+    const url = "http://127.0.0.1:8000/api/courses/"; // Adjust endpoint as necessary
+    return await request(url, "GET", null, token);
+};

@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   Navigate,
+  useLocation,
 } from "react-router-dom";
 import Learning from "./components/LearningDashboard";
 import Events from "./components/Events";
@@ -19,19 +20,34 @@ function App() {
     { label: "Progress", path: "/progress" },
   ];
 
+  // Custom Layout Wrapper for Conditional Navbar
+  const Layout = ({ children }) => {
+    const location = useLocation();
+
+    // Hide Navbar on these routes
+    const noNavbarRoutes = ["/", "/login", "/register"];
+    const hideNavbar = noNavbarRoutes.includes(location.pathname);
+
+    return (
+      <>
+        {!hideNavbar && <Navbar title="User Dashboard" links={navbarLinks} />}
+        {children}
+      </>
+    );
+  };
+
   return (
-    <Router>      
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-      </Routes>
-      <Navbar title="User Dashboard" links={navbarLinks} />
-      <Routes>
-        <Route path="/learning" element={<Learning />} />
-        <Route path="/events" element={<Events />} />
-        <Route path="/progress" element={<Progress />} />
-      </Routes>
+    <Router>
+      <Layout>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/learning" element={<Learning />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/progress" element={<Progress />} />
+        </Routes>
+      </Layout>
     </Router>
   );
 }
