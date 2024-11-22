@@ -11,19 +11,19 @@ const EventsPage = () => {
     // Fetch events from the backend
     useEffect(() => {
         const fetchEvents = async () => {
-            const token = localStorage.getItem('authToken'); // Fetch the token from localStorage
+            const token = localStorage.getItem('authToken');
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/auth/events/', {
+                const response = await fetch('http://127.0.0.1:8000/api/events/', {
                     headers: {
                         'Content-Type': 'application/json',
-                        Authorization: `Token ${token}`, // Include the token in the headers
+                        Authorization: `Token ${token}`,
                     },
                 });
                 if (!response.ok) {
                     throw new Error('Failed to fetch events');
                 }
                 const data = await response.json();
-                setEvents(data); // Set events from the response
+                setEvents(data);
             } catch (error) {
                 console.error('Error fetching events:', error);
             } finally {
@@ -36,7 +36,7 @@ const EventsPage = () => {
 
     // Get events for the selected date
     const eventsForSelectedDate = events.filter(
-        (event) => event.date === date.toISOString().split('T')[0]
+        (event) => event.start_time.split('T')[0] === date.toISOString().split('T')[0]
     );
 
     // Handle event registration
@@ -111,9 +111,17 @@ const EventsPage = () => {
                     <ul style={styles.eventsList}>
                         {eventsForSelectedDate.map((event) => (
                             <li key={event.id} style={styles.eventItem}>
-                                <span>{event.title}</span>
+                                <span>
+                                    {event.title} <br />
+                                    Start: {new Date(event.start_time).toLocaleString()} <br />
+                                    End: {new Date(event.end_time).toLocaleString()}
+                                </span>
                                 <button
-                                    style={registeredEvents.includes(event) ? styles.registerButtonDisabled : styles.registerButton}
+                                    style={
+                                        registeredEvents.includes(event)
+                                            ? styles.registerButtonDisabled
+                                            : styles.registerButton
+                                    }
                                     onClick={() => handleRegister(event.id)}
                                     disabled={registeredEvents.includes(event)}
                                 >
@@ -134,9 +142,17 @@ const EventsPage = () => {
                     <ul style={styles.eventsList}>
                         {events.map((event) => (
                             <li key={event.id} style={styles.eventItem}>
-                                <span>{event.title} (Date: {new Date(event.date).toDateString()})</span>
+                                <span>
+                                    {event.title} <br />
+                                    Start: {new Date(event.start_time).toLocaleString()} <br />
+                                    End: {new Date(event.end_time).toLocaleString()}
+                                </span>
                                 <button
-                                    style={registeredEvents.includes(event) ? styles.registerButtonDisabled : styles.registerButton}
+                                    style={
+                                        registeredEvents.includes(event)
+                                            ? styles.registerButtonDisabled
+                                            : styles.registerButton
+                                    }
                                     onClick={() => handleRegister(event.id)}
                                     disabled={registeredEvents.includes(event)}
                                 >
