@@ -1,5 +1,5 @@
 from rest_framework import viewsets
-from .models import User, Content, UserProgress, Event, EventRegistration
+from .models import User, Courses, Progress, Events
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -8,8 +8,8 @@ from rest_framework.permissions import AllowAny
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
 from .serializers import (
-    UserSerializer, ContentSerializer, UserProgressSerializer,
-    EventSerializer, EventRegistrationSerializer
+    UserSerializer, CoursesSerializer, ProgressSerializer,
+    EventsSerializer,
 )
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
@@ -20,22 +20,17 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-class ContentViewSet(viewsets.ModelViewSet):
-    queryset = Content.objects.all()
-    serializer_class = ContentSerializer
+class CoursesViewSet(viewsets.ModelViewSet):
+    queryset = Courses.objects.all()
+    serializer_class = CoursesSerializer
 
-class UserProgressViewSet(viewsets.ModelViewSet):
-    queryset = UserProgress.objects.all()
-    serializer_class = UserProgressSerializer
+class ProgressViewSet(viewsets.ModelViewSet):
+    queryset = Progress.objects.all()
+    serializer_class = ProgressSerializer
 
-class EventViewSet(viewsets.ModelViewSet):
-    queryset = Event.objects.all()
-    serializer_class = EventSerializer
-
-class EventRegistrationViewSet(viewsets.ModelViewSet):
-    queryset = EventRegistration.objects.all()
-    serializer_class = EventRegistrationSerializer
-
+class EventsViewSet(viewsets.ModelViewSet):
+    queryset = Events.objects.all()
+    serializer_class = EventsSerializer
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
