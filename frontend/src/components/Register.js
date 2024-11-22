@@ -9,6 +9,7 @@ import {
   Alert,
   CssBaseline,
   Container,
+  Link,
 } from "@mui/material";
 import { PersonAdd } from "@mui/icons-material";
 
@@ -116,6 +117,17 @@ const Register = () => {
               {error}
             </Alert>
           )}
+          <Typography align="center" sx={{ mt: 2 }}>
+            Already have an account?{" "}
+            <Link
+              component="button"
+              onClick={() => navigate("/login")}
+              underline="none"
+              sx={{ color: "green", fontWeight: "bold" }}
+            >
+              Login here
+            </Link>
+          </Typography>
         </Box>
       </Box>
     </Container>

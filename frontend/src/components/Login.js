@@ -9,6 +9,7 @@ import {
   Alert,
   CssBaseline,
   Container,
+  Link,
 } from "@mui/material";
 import { LockOutlined } from "@mui/icons-material";
 
@@ -101,6 +102,17 @@ const Login = () => {
               {error}
             </Alert>
           )}
+          <Typography align="center" sx={{ mt: 2 }}>
+            Don’t have an account?{" "}
+            <Link
+              component="button"
+              onClick={() => navigate("/register")}
+              underline="none"
+              sx={{ color: "green", fontWeight: "bold" }}
+            >
+              Register here
+            </Link>
+          </Typography>
         </Box>
       </Box>
     </Container>
