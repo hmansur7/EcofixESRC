@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../api";
+import { loginUser } from "../services/api";
 import {
   Box,
   Button,
@@ -26,24 +26,18 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Form validation
-    if (!formData.email || !formData.password) {
-      setError("Both email and password are required.");
-      return;
-    }
-
-    setLoading(true);
-    setError(""); // Clear any previous errors
-
     try {
-      const response = await loginUser(formData.email, formData.password);
-      localStorage.setItem("authToken", response.token); // Store the token
-      navigate("/learning"); // Redirect to LearningDashboard
-    } catch (err) {
-      setError(err.message || "Login failed. Please try again.");
-    } finally {
-      setLoading(false);
+        const response = await loginUser(formData.email, formData.password);
+        
+        // Redirect based on role
+        const role = response.role;
+        if (role === "admin") {
+            navigate("/admin/dashboard");
+        } else {
+            navigate("/learning");
+        }
+    } catch (error) {
+        setError(error.message);
     }
   };
 

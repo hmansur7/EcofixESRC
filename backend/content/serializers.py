@@ -10,16 +10,27 @@ class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['user_id', 'name', 'email', 'password', 'role']
-        extra_kwargs = {'password': {'write_only': True}}
+        extra_kwargs = {'password': {'write_only': True}}  # Password is write-only
+
+    def to_representation(self, instance):
+        """
+        Exclude the password field in read operations (responses).
+        """
+        representation = super().to_representation(instance)
+        representation.pop('password', None)  # Remove password from response
+        return representation
 
     def create(self, validated_data):
-        # Create a user with hashed password
+        """
+        Create a user with a hashed password.
+        """
         user = User.objects.create_user(
             email=validated_data['email'],
             name=validated_data['name'],
             password=validated_data['password'],
         )
         return user
+
 
 class CoursesSerializer(serializers.ModelSerializer):
     class Meta:

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getCourses } from "../api";
+import { getCourses } from "../services/api";
 import {
     Box,
     Typography,

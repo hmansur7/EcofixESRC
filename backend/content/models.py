@@ -27,7 +27,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255)
     email = models.EmailField(unique=True)
     role = models.CharField(max_length=10, choices=[('user', 'User'), ('admin', 'Admin')], default='user')
-
+    
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
