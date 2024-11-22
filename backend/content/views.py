@@ -8,9 +8,11 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
-from .models import User, Courses, Progress, Events
+from .models import User, Courses, Progress, Events, Registration
 from .serializers import UserSerializer, CoursesSerializer, ProgressSerializer, EventsSerializer
 from .permissions import IsAdmin  # Import the custom permission class
+from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib import messages
 
 User = get_user_model()
 
@@ -88,6 +90,25 @@ class EventListView(APIView):
         serializer = EventsSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class RegisterForEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, event_id):
+        # Get the event object from the database
+        event = Events.objects.filter(id=event_id).first()
+
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the user is already registered for this event
+        if Registration.objects.filter(user=request.user, event=event).exists():
+            return Response({"error": "You are already registered for this event."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Create the registration record
+        registration = Registration.objects.create(user=request.user, event=event)
+
+        # Return success response
+        return Response({"message": "You have successfully registered for the event."}, status=status.HTTP_201_CREATED)
 
 # Admin Views
 class AdminUserListView(ListAPIView):

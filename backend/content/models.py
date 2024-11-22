@@ -44,20 +44,9 @@ class Courses(models.Model):
     def __str__(self):
         return self.title
 
-class Resources(models.Model):
-    resource_id = models.AutoField(primary_key=True)
+class Lessons(models.Model):
+    lesson_id = models.AutoField(primary_key=True)
     course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='resources')
-    resource_type = models.CharField(max_length=10, choices=[
-        ('pdf', 'PDF'),
-        ('docx', 'Word Document (DOCX)'),
-        ('pptx', 'PowerPoint (PPTX)'),
-        ('txt', 'Text File (TXT)'),
-        ('jpg', 'JPEG Image'),
-        ('png', 'PNG Image'),
-        ('mp4', 'MP4 Video'),
-        ('weburl', 'Website'),
-        ('other', 'Other'),
-    ], default='other')
     title = models.CharField(max_length=255)
     description = models.TextField(null=True, blank=True)
     attachment = models.FileField(upload_to='resources/attachments/', null=True, blank=True)
@@ -100,3 +89,13 @@ class Progress(models.Model):
 
     def __str__(self):
         return f"{self.user.name} - {self.course.title} - {self.completion_percentage}%"
+
+class Registration(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registrations')
+    event = models.ForeignKey(Events, on_delete=models.CASCADE, related_name='registrations')
+
+    def __str__(self):
+        return f"{self.user.name} registered for {self.event.title}"
+
+    class Meta:
+        unique_together = ('user', 'event')  # Ensure a user can't register for the same event more than once

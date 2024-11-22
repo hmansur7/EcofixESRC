@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css'; // Base styles for react-calendar
+import Axios from 'axios';
 
 const EventsPage = () => {
     const [date, setDate] = useState(new Date()); // Selected date
@@ -8,23 +9,18 @@ const EventsPage = () => {
     const [registeredEvents, setRegisteredEvents] = useState([]); // User-registered events
     const [loading, setLoading] = useState(true); // Loading state for events
     const [error, setError] = useState(''); // Error state
+    const [userToken, setUserToken] = useState(localStorage.getItem('authToken')); // Authentication token
 
     // Fetch events from the backend
     useEffect(() => {
         const fetchEvents = async () => {
-            const token = localStorage.getItem('authToken');
             try {
-                const response = await fetch('http://127.0.0.1:8000/api/events/', {
+                const response = await Axios.get('http://127.0.0.1:8000/api/events/', {
                     headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Token ${token}`,
+                        'Authorization': `Token ${userToken}`,
                     },
                 });
-                if (!response.ok) {
-                    throw new Error('Failed to fetch events');
-                }
-                const data = await response.json();
-                setEvents(data);
+                setEvents(response.data);
                 setError(''); // Clear any previous errors
             } catch (error) {
                 console.error('Error fetching events:', error);
@@ -35,7 +31,7 @@ const EventsPage = () => {
         };
 
         fetchEvents();
-    }, []); // Empty dependency array ensures this only runs once when the component mounts
+    }, [userToken]); // Empty dependency array ensures this only runs once when the component mounts
 
     // Get events for the selected date
     const eventsForSelectedDate = events.filter(
@@ -43,27 +39,76 @@ const EventsPage = () => {
     );
 
     // Handle event registration
-    const handleRegister = (eventId) => {
-        const event = events.find((e) => e.id === eventId);
-        if (event && !registeredEvents.includes(event)) {
-            setRegisteredEvents([...registeredEvents, event]);
-            alert(`You have registered for: ${event.title}`);
-        } else {
-            alert('You are already registered for this event.');
+    const handleRegister = async (eventId) => {
+        try {
+            // Ensure the eventId is valid
+            if (!eventId) {
+                alert('Invalid event ID');
+                return;
+            }
+    
+            // Send the POST request to the backend to register for the event
+            const response = await Axios.post(
+                `http://127.0.0.1:8000/api/auth/event/${eventId}/register/`,
+                {}, // Empty body if not required by the backend
+                {
+                    headers: {
+                        'Authorization': `Token ${userToken}`, // Ensure you send the correct token
+                    },
+                }
+            );
+    
+            // Handle successful registration
+            if (response.status === 201) {
+                alert('Successfully registered for the event!');
+                // Optionally, fetch registered events again to update the UI
+                fetchRegisteredEvents();
+            } else {
+                alert('Error registering for event: ' + response.data.error);
+            }
+        } catch (error) {
+            console.error('Error registering for event:', error);
+            alert('An error occurred while registering for the event. Please try again.');
         }
     };
+
+    // Fetch events the user is registered for
+    const fetchRegisteredEvents = async () => {
+        try {
+            const response = await Axios.get('http://127.0.0.1:8000/api/events/', {
+                headers: {
+                    'Authorization': `Token ${userToken}`,
+                },
+            });
+            const registeredEvents = response.data.filter((event) => event.attendees.includes(userToken));
+            setRegisteredEvents(registeredEvents);
+        } catch (error) {
+            console.error('Error fetching registered events:', error);
+        }
+    };
+
+    useEffect(() => {
+        if (userToken) {
+            fetchRegisteredEvents();
+        }
+    }, [userToken]);
 
     // Styles
     const styles = {
         container: {
+            display: 'flex',
+            justifyContent: 'space-between',
             padding: '20px',
             fontFamily: 'Arial, sans-serif',
         },
+        calendarAndEvents: {
+            flex: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+        },
         calendar: {
-            margin: '20px 0',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            padding: '10px',
+            marginBottom: '20px',
         },
         eventsList: {
             listStyleType: 'none',
@@ -86,11 +131,6 @@ const EventsPage = () => {
             padding: '5px 10px',
             cursor: 'pointer',
         },
-        registerButtonDisabled: {
-            backgroundColor: '#ccc',
-            color: '#666',
-            cursor: 'not-allowed',
-        },
         loading: {
             textAlign: 'center',
             fontSize: '16px',
@@ -101,18 +141,32 @@ const EventsPage = () => {
             textAlign: 'center',
             marginTop: '20px',
         },
+        registeredEvents: {
+            marginTop: '20px',
+            paddingLeft: '20px',
+            borderTop: '1px solid #ddd',
+            paddingTop: '20px',
+        },
+        registeredEventItem: {
+            padding: '10px',
+            border: '1px solid #ddd',
+            marginBottom: '10px',
+            borderRadius: '5px',
+        },
     };
 
     return (
         <div style={styles.container}>
-            <h1>Events Page</h1>
-            <Calendar
-                onChange={setDate} // Updates the selected date
-                value={date}
-                style={styles.calendar}
-            />
-            {error && <p style={styles.errorMessage}>{error}</p>}
-            <div style={{ marginTop: '20px' }}>
+            <div style={styles.calendarAndEvents}>
+                {/* Calendar Component */}
+                <div style={styles.calendar}>
+                    <Calendar
+                        onChange={setDate} // Updates the selected date
+                        value={date}
+                    />
+                </div>
+
+                {/* Events on the selected date */}
                 <h2>Events on {date.toDateString()}:</h2>
                 {loading ? (
                     <p style={styles.loading}>Loading events...</p>
@@ -126,15 +180,10 @@ const EventsPage = () => {
                                     End: {new Date(event.end_time).toLocaleString()}
                                 </span>
                                 <button
-                                    style={
-                                        registeredEvents.includes(event)
-                                            ? styles.registerButtonDisabled
-                                            : styles.registerButton
-                                    }
-                                    onClick={() => handleRegister(event.id)}
-                                    disabled={registeredEvents.includes(event)}
+                                    style={styles.registerButton}
+                                    onClick={() => handleRegister(event.event_id)}
                                 >
-                                    {registeredEvents.includes(event) ? 'Registered' : 'Register'}
+                                    Register
                                 </button>
                             </li>
                         ))}
@@ -142,12 +191,12 @@ const EventsPage = () => {
                 ) : (
                     <p>No events for this day.</p>
                 )}
-            </div>
-            <div style={{ marginTop: '40px' }}>
+
+                {/* All Events */}
                 <h2>All Events:</h2>
                 {loading ? (
-                    <p style={styles.loading}>Loading events...</p>
-                ) : (
+                    <p style={styles.loading}>Loading all events...</p>
+                ) : events.length > 0 ? (
                     <ul style={styles.eventsList}>
                         {events.map((event) => (
                             <li key={event.id} style={styles.eventItem}>
@@ -157,21 +206,42 @@ const EventsPage = () => {
                                     End: {new Date(event.end_time).toLocaleString()}
                                 </span>
                                 <button
-                                    style={
-                                        registeredEvents.includes(event)
-                                            ? styles.registerButtonDisabled
-                                            : styles.registerButton
-                                    }
-                                    onClick={() => handleRegister(event.id)}
-                                    disabled={registeredEvents.includes(event)}
+                                    style={styles.registerButton}
+                                    onClick={() => handleRegister(event.event_id)}
                                 >
-                                    {registeredEvents.includes(event) ? 'Registered' : 'Register'}
+                                    Register
                                 </button>
                             </li>
                         ))}
                     </ul>
+                ) : (
+                    <p>No events available.</p>
                 )}
             </div>
+
+            {/* Registered Events on the right side */}
+            <div style={styles.registeredEvents}>
+                <h2>Your Registered Events:</h2>
+                {loading ? (
+                    <p style={styles.loading}>Loading registered events...</p>
+                ) : registeredEvents.length > 0 ? (
+                    <ul style={styles.eventsList}>
+                        {registeredEvents.map((event) => (
+                            <li key={event.id} style={styles.registeredEventItem}>
+                                <span>
+                                    {event.title} <br />
+                                    Start: {new Date(event.start_time).toLocaleString()} <br />
+                                    End: {new Date(event.end_time).toLocaleString()}
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>You are not registered for any events.</p>
+                )}
+            </div>
+
+            {error && <p style={styles.errorMessage}>{error}</p>}
         </div>
     );
 };

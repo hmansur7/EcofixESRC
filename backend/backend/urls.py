@@ -5,7 +5,7 @@ from content.views import (
     UserViewSet, CoursesViewSet, ProgressViewSet, EventsViewSet,
     RegisterView, LoginView, AdminUserListView,
     AdminAddCourseView, AdminRemoveCourseView, AdminAddEventView, AdminRemoveEventView, 
-    AdminListCoursesView, AdminListEventsView
+    AdminListCoursesView, AdminListEventsView, RegisterForEventView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -24,6 +24,7 @@ urlpatterns = [
     # Authentication endpoints
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
+    path('api/auth/event/<int:event_id>/register/', RegisterForEventView.as_view(), name='register_for_event'),
 
     # Admin-specific endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),
