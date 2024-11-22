@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 from .models import User, Courses, Progress, Events
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -23,6 +24,7 @@ class UserViewSet(viewsets.ModelViewSet):
 class CoursesViewSet(viewsets.ModelViewSet):
     queryset = Courses.objects.all()
     serializer_class = CoursesSerializer
+    permission_classes = [IsAuthenticated] 
 
 class ProgressViewSet(viewsets.ModelViewSet):
     queryset = Progress.objects.all()
@@ -31,6 +33,7 @@ class ProgressViewSet(viewsets.ModelViewSet):
 class EventsViewSet(viewsets.ModelViewSet):
     queryset = Events.objects.all()
     serializer_class = EventsSerializer
+    permission_classes = [IsAuthenticated]
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -58,7 +61,8 @@ class RegisterView(APIView):
                 password=make_password(data['password']),  # Hash the password
             )
             user.save()
-            return Response({"message": "User registered successfully!"}, status=status.HTTP_201_CREATED)
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({"message": "User registered successfully!", "token": token.key}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": f"Registration failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
@@ -80,6 +84,7 @@ class LoginView(APIView):
             return Response({"error": "Invalid email or password."}, status=status.HTTP_400_BAD_REQUEST)
         
 class EventListView(APIView):
+    permission_classes = [IsAuthenticated] 
     def get(self, request, *args, **kwargs):
         events = Events.objects.all()
         serializer = EventsSerializer(events, many=True)

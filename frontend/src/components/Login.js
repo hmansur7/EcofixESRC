@@ -10,13 +10,15 @@ import {
   CssBaseline,
   Container,
   Link,
+  CircularProgress,
 } from "@mui/material";
 import { LockOutlined } from "@mui/icons-material";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // Initialize navigate
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -24,12 +26,24 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Form validation
+    if (!formData.email || !formData.password) {
+      setError("Both email and password are required.");
+      return;
+    }
+
+    setLoading(true);
+    setError(""); // Clear any previous errors
+
     try {
       const response = await loginUser(formData.email, formData.password);
-      localStorage.setItem("authToken", response.token); // Optionally store the token
-      navigate("/learning"); // Redirect to LearningDashboard on success
-    } catch (error) {
-      setError(error.message);
+      localStorage.setItem("authToken", response.token); // Store the token
+      navigate("/learning"); // Redirect to LearningDashboard
+    } catch (err) {
+      setError(err.message || "Login failed. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -70,6 +84,7 @@ const Login = () => {
             name="email"
             autoComplete="email"
             autoFocus
+            value={formData.email}
             onChange={handleChange}
           />
           <TextField
@@ -82,12 +97,14 @@ const Login = () => {
             type="password"
             id="password"
             autoComplete="current-password"
+            value={formData.password}
             onChange={handleChange}
           />
           <Button
             type="submit"
             fullWidth
             variant="contained"
+            disabled={loading}
             sx={{
               mt: 2,
               mb: 2,
@@ -95,7 +112,7 @@ const Login = () => {
               "&:hover": { backgroundColor: "darkgreen" },
             }}
           >
-            Login
+            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Login"}
           </Button>
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>

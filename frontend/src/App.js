@@ -3,7 +3,6 @@ import {
   BrowserRouter as Router,
   Routes,
   Route,
-  Navigate,
   useLocation,
 } from "react-router-dom";
 import Learning from "./components/LearningDashboard";
@@ -12,6 +11,8 @@ import Progress from "./components/Progress";
 import HomePage from "./components/Home";
 import Login from "./components/Login";
 import Register from "./components/Register";
+import NotFound from "./components/Notfound";
+import PrivateRoute from "./middleware/Private";
 
 function App() {
   const navbarLinks = [
@@ -20,17 +21,18 @@ function App() {
     { label: "Progress", path: "/progress" },
   ];
 
-  // Custom Layout Wrapper for Conditional Navbar
   const Layout = ({ children }) => {
     const location = useLocation();
 
-    // Hide Navbar on these routes
-    const noNavbarRoutes = ["/", "/login", "/register"];
-    const hideNavbar = noNavbarRoutes.includes(location.pathname);
+    
+    const validNavbarRoutes = ["/learning", "/events", "/progress"];
+
+    
+    const showNavbar = validNavbarRoutes.includes(location.pathname);
 
     return (
       <>
-        {!hideNavbar && <Navbar title="User Dashboard" links={navbarLinks} />}
+        {showNavbar && <Navbar title="User Dashboard" links={navbarLinks} />}
         {children}
       </>
     );
@@ -43,9 +45,32 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/learning" element={<Learning />} />
-          <Route path="/events" element={<Events />} />
-          <Route path="/progress" element={<Progress />} />
+          <Route
+            path="/learning"
+            element={
+              <PrivateRoute>
+                <Learning />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <PrivateRoute>
+                <Events />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/progress"
+            element={
+              <PrivateRoute>
+                <Progress />
+              </PrivateRoute>
+            }
+          />
+          {/* Catch-all route for invalid paths */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
     </Router>

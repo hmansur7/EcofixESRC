@@ -30,7 +30,7 @@ const Register = () => {
         formData.email,
         formData.password
       );
-      localStorage.setItem("authToken", response.token); // Optionally store the token
+      localStorage.setItem("authToken", response.token); 
       navigate("/learning"); // Redirect to LearningDashboard on success
     } catch (error) {
       setError(error.message);

@@ -7,6 +7,7 @@ const EventsPage = () => {
     const [events, setEvents] = useState([]); // All events
     const [registeredEvents, setRegisteredEvents] = useState([]); // User-registered events
     const [loading, setLoading] = useState(true); // Loading state for events
+    const [error, setError] = useState(''); // Error state
 
     // Fetch events from the backend
     useEffect(() => {
@@ -24,8 +25,10 @@ const EventsPage = () => {
                 }
                 const data = await response.json();
                 setEvents(data);
+                setError(''); // Clear any previous errors
             } catch (error) {
                 console.error('Error fetching events:', error);
+                setError('Failed to load events. Please try again.');
             } finally {
                 setLoading(false);
             }
@@ -93,6 +96,11 @@ const EventsPage = () => {
             fontSize: '16px',
             color: '#888',
         },
+        errorMessage: {
+            color: 'red',
+            textAlign: 'center',
+            marginTop: '20px',
+        },
     };
 
     return (
@@ -103,6 +111,7 @@ const EventsPage = () => {
                 value={date}
                 style={styles.calendar}
             />
+            {error && <p style={styles.errorMessage}>{error}</p>}
             <div style={{ marginTop: '20px' }}>
                 <h2>Events on {date.toDateString()}:</h2>
                 {loading ? (

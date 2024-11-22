@@ -1,72 +1,84 @@
 import React, { useState, useEffect } from "react";
-import { getResources } from "../api"; // Import the new named export
+import { getCourses } from "../api";
 import {
     Box,
+    Typography,
+    CircularProgress,
     Grid,
     Card,
     CardContent,
     CardActions,
-    Typography,
     Button,
+    Alert,
 } from "@mui/material";
 
 const LearningDashboard = () => {
-    const [resources, setResources] = useState([]);
+    const [courses, setCourses] = useState([]); // Courses state
+    const [loading, setLoading] = useState(true); // Loading state
+    const [error, setError] = useState(""); // Error state
 
     useEffect(() => {
-        getResources()
-            .then((data) => {
-                setResources(data);
-            })
-            .catch((error) => {
-                console.error("Error fetching learning resources:", error);
-            });
+        const fetchCourses = async () => {
+            try {
+                const data = await getCourses(); // Fetch courses
+                setCourses(data);
+            } catch (err) {
+                console.error("Error fetching courses:", err);
+                setError("Failed to load courses. Please try again.");
+            } finally {
+                setLoading(false); // Stop loading
+            }
+        };
+
+        fetchCourses();
     }, []);
 
     return (
-        <Box sx={{ padding: 2 }}>
-            <Typography variant="h4" gutterBottom>
+        <Box sx={{ padding: 3 }}>
+            <Typography variant="h4" sx={{ mb: 3 }}>
                 Learning Dashboard
             </Typography>
-            <Grid container spacing={3}>
-                {resources.length === 0 ? (
-                    <Typography paddingTop={2} paddingLeft={3.2}>
-                        No learning resources found.
-                    </Typography>
-                ) : (
-                    resources.map((resource) => (
-                        <Grid item xs={12} sm={6} md={4} key={resource.id}>
+            {loading ? (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+                    <CircularProgress />
+                </Box>
+            ) : error ? (
+                <Alert severity="error">{error}</Alert>
+            ) : courses.length > 0 ? (
+                <Grid container spacing={3}>
+                    {courses.map((course) => (
+                        <Grid item xs={12} sm={6} md={4} key={course.id}>
                             <Card sx={{ height: "100%" }}>
                                 <CardContent>
                                     <Typography variant="h5" component="div">
-                                        {resource.title}
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {resource.description}
+                                        {course.title}
                                     </Typography>
                                     <Typography
-                                        variant="caption"
+                                        variant="body2"
                                         color="text.secondary"
-                                        display="block"
-                                        mt={1}
+                                        sx={{ mt: 1 }}
                                     >
-                                        {resource.content_type}
+                                        {course.description || "No description available"}
                                     </Typography>
                                 </CardContent>
                                 <CardActions>
                                     <Button
                                         size="small"
                                         color="primary"
-                                        onClick={() => window.open(resource.url, "_blank")}
+                                        onClick={() =>
+                                            alert(`Selected Course: ${course.title}`)
+                                        }
                                     >
-                                        View {resource.content_type}
+                                        View Course
                                     </Button>
                                 </CardActions>
                             </Card>
                         </Grid>
-                    ))
-                )}
-            </Grid>
+                    ))}
+                </Grid>
+            ) : (
+                <Typography>No courses available at the moment.</Typography>
+            )}
         </Box>
     );
 };
