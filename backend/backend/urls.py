@@ -3,9 +3,8 @@ from django.contrib import admin
 from rest_framework.routers import DefaultRouter
 from content.views import (
     UserViewSet, CoursesViewSet, ProgressViewSet,
-    EventsViewSet
+    EventsViewSet, EventListView, RegisterView, LoginView
 )
-from content.views import RegisterView, LoginView
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -21,4 +20,5 @@ urlpatterns = [
     path('api/users/login/', LoginView.as_view(), name='login'),
     path('api/', include(router.urls)),
     path('', include('content.urls')),
+    path('api/users/events/', EventListView.as_view(), name='event-list'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

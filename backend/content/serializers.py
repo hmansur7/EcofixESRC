@@ -34,4 +34,5 @@ class ProgressSerializer(serializers.ModelSerializer):
 class EventsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Events
-        fields = '__all__'
+        fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
+        

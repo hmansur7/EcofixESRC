@@ -78,3 +78,9 @@ class LoginView(APIView):
             return Response({"token": token.key}, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid email or password."}, status=status.HTTP_400_BAD_REQUEST)
+        
+class EventListView(APIView):
+    def get(self, request, *args, **kwargs):
+        events = Events.objects.all()
+        serializer = EventsSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

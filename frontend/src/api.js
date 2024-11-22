@@ -8,12 +8,12 @@ const API = axios.create({
 
 
 
-export const fetchLearningResources = () => API.get('contents/');
+export const fetchLearningResources = () => API.get('courses/');
 export const fetchEvents = () => API.get('events/');
-export const fetchUserProgress = () => API.get('user-progress/');
+export const fetchUserProgress = () => API.get('progress/');
 
-export const createLearningResource = (data) => API.post('contents/', data);
-export const updateLearningResource = (id, data) => API.put(`contents/${id}/`, data);
-export const deleteLearningResource = (id) => API.delete(`contents/${id}/`);
+export const createLearningResource = (data) => API.post('courses/', data);
+export const updateLearningResource = (id, data) => API.put(`courses/${id}/`, data);
+export const deleteLearningResource = (id) => API.delete(`courses/${id}/`);
 
 export default API;
