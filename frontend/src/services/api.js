@@ -107,7 +107,6 @@ export const getEventRegistrations = async (eventId) => {
     return response.data; 
 };
 
-// User Progress APIs
 export const updateLessonProgress = async (lessonId, completed) => {
     const response = await API.post(`lesson/${lessonId}/progress/`, { completed });
     return response.data;
@@ -120,6 +119,16 @@ export const getCourseProgress = async (courseId) => {
 
 export const getLessonsForCourse = async (courseId) => {
     const response = await API.get(`courses/${courseId}/lessons/`);
+    return response.data;
+};
+
+export const addAdminLesson = async (lessonData) => {
+    const response = await API.post("admin/lessons/add/", lessonData);
+    return response.data;
+};
+
+export const removeAdminLesson = async (lessonId) => {
+    const response = await API.delete(`admin/lessons/remove/${lessonId}/`);
     return response.data;
 };
 

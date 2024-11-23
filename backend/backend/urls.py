@@ -7,7 +7,7 @@ from content.views import (
     AdminAddCourseView, AdminRemoveCourseView, AdminAddEventView, AdminRemoveEventView, 
     AdminListCoursesView, AdminListEventsView, RegisterForEventView, UserRegisteredEventsListView,
     UnregisterFromEventView, AdminEventRegistrationsView, UpdateLessonProgressView, GetCourseProgressView,
-    CourseLessonsView,
+    CourseLessonsView, AdminAddLessonView, AdminRemoveLessonView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -40,6 +40,8 @@ urlpatterns = [
     path('api/admin/events/add/', AdminAddEventView.as_view(), name='admin-add-event'),
     path('api/admin/events/remove/<int:event_id>/', AdminRemoveEventView.as_view(), name='admin-remove-event'),
     path('api/admin/events/<int:event_id>/registrations/', AdminEventRegistrationsView.as_view(), name='admin-event-registrations'),
+    path('api/admin/lessons/add/', AdminAddLessonView.as_view(), name='admin-add-lesson'),
+path('api/admin/lessons/remove/<int:lesson_id>/', AdminRemoveLessonView.as_view(), name='admin-remove-lesson'),
     # Default DRF router paths
     path('api/', include(router.urls)),
     path('api/admin/courses/', AdminListCoursesView.as_view(), name='admin-list-courses'),

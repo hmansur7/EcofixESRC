@@ -272,3 +272,26 @@ class AdminEventRegistrationsView(APIView):
         # Serialize user data
         serializer = UserSerializer(users, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+class AdminAddLessonView(CreateAPIView):
+    """
+    Admin-only view to add a lesson to a course.
+    """
+    permission_classes = [IsAdmin]
+    queryset = Lessons.objects.all()
+    serializer_class = LessonsSerializer
+
+    def perform_create(self, serializer):
+        course_id = self.request.data.get("course_id")
+        course = get_object_or_404(Courses, course_id=course_id)
+        serializer.save(course=course)
+
+
+class AdminRemoveLessonView(DestroyAPIView):
+    """
+    Admin-only view to remove a lesson by lesson_id.
+    """
+    permission_classes = [IsAdmin]
+    queryset = Lessons.objects.all()
+    serializer_class = LessonsSerializer
+    lookup_field = 'lesson_id'
