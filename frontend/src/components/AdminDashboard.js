@@ -33,7 +33,6 @@ import {
   getEventRegistrations,
   logoutUser,
 } from "../services/api";
-import LessonManagement from "./LessonManagement"; // Import LessonManagement
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -49,10 +48,6 @@ const AdminDashboard = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-
-  // State for Lesson Management Dialog
-  const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
-  const [selectedCourse, setSelectedCourse] = useState(null);
 
   const navigate = useNavigate();
 
@@ -148,18 +143,6 @@ const AdminDashboard = () => {
     setRegisteredUsers([]);
   };
 
-  // Open Lesson Management Dialog
-  const openLessonDialog = (course) => {
-    setSelectedCourse(course);
-    setIsLessonDialogOpen(true);
-  };
-
-  // Close Lesson Management Dialog
-  const closeLessonDialog = () => {
-    setSelectedCourse(null);
-    setIsLessonDialogOpen(false);
-  };
-
   const styles = {
     header: {
       color: "green",
@@ -184,7 +167,7 @@ const AdminDashboard = () => {
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
+<Box sx={{ padding: 3 }}>
       <Box
         sx={{
           display: "flex",
