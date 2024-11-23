@@ -50,7 +50,8 @@ const HomePage = () => {
             marginBottom: 2,
           }}
         >
-          Welcome to the Hub
+          Educational Resources and Sustainability <br/>
+          Content Hub
         </Typography>
         <Typography
           variant="h6"

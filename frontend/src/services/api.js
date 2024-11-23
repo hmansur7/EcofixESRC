@@ -107,4 +107,20 @@ export const getEventRegistrations = async (eventId) => {
     return response.data; 
 };
 
+// User Progress APIs
+export const updateLessonProgress = async (lessonId, progressData) => {
+    const response = await API.post(`lesson/${lessonId}/progress/`, progressData);
+    return response.data;
+};
+
+export const getCourseProgress = async (courseId) => {
+    const response = await API.get(`course/${courseId}/progress/`);
+    return response.data;
+};
+
+export const getLessonsForCourse = async (courseId) => {
+    const response = await API.get(`courses/${courseId}/lessons/`);
+    return response.data;
+};
+
 export default API;

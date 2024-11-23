@@ -8,11 +8,12 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
-from .models import User, Courses, Progress, Events, Registration
-from .serializers import UserSerializer, CoursesSerializer, ProgressSerializer, EventsSerializer, UserRegisteredEventsListSerializer
+from .models import CourseProgress, LessonProgress, Lessons, User, Courses, Events, Registration
+from .serializers import CourseProgressSerializer, LessonsSerializer, UserSerializer, CoursesSerializer, EventsSerializer, UserRegisteredEventsListSerializer
 from .permissions import IsAdmin  # Import the custom permission class
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
+from .utils import calculate_course_progress
 
 User = get_user_model()
 
@@ -21,17 +22,79 @@ class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
-
 class CoursesViewSet(viewsets.ModelViewSet):
     queryset = Courses.objects.all()
     serializer_class = CoursesSerializer
     permission_classes = [IsAuthenticated]
 
+class LessonsViewSet(viewsets.ModelViewSet):
+    queryset = Lessons.objects.all()
+    serializer_class = LessonsSerializer
 
-class ProgressViewSet(viewsets.ModelViewSet):
-    queryset = Progress.objects.all()
-    serializer_class = ProgressSerializer
+class LessonsListView(APIView):
+    def get(self, request, course_id):
+        # Filter lessons by the provided course_id
+        lessons = Lessons.objects.filter(course_id=course_id).order_by('order')
+        serializer = LessonsSerializer(lessons, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
+class UpdateLessonProgressView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, lesson_id):
+        user = request.user
+        try:
+            # Fetch the lesson
+            lesson = Lessons.objects.get(lesson_id=lesson_id)
+        except Lessons.DoesNotExist:
+            return Response({"error": "Lesson not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update or create lesson progress
+        lesson_progress, _ = LessonProgress.objects.get_or_create(user=user, lesson=lesson)
+        lesson_progress.completed = request.data.get('completed', False)
+        lesson_progress.save()
+
+        # Update course progress
+        self.update_course_progress(user, lesson.course)
+
+        return Response({"message": "Lesson progress updated successfully."}, status=status.HTTP_200_OK)
+
+    def update_course_progress(self, user, course):
+        # Get all lessons for this course
+        lessons = Lessons.objects.filter(course=course)
+        total_lessons = lessons.count()
+        completed_lessons = LessonProgress.objects.filter(user=user, lesson__in=lessons, completed=True).count()
+
+        # Calculate progress as a percentage
+        progress_percentage = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
+
+        # Update or create course progress record
+        course_progress, _ = CourseProgress.objects.get_or_create(user=user, course=course)
+        course_progress.progress_percentage = progress_percentage
+        course_progress.save()
+
+class GetCourseProgressView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, course_id):
+        user = request.user
+        try:
+            course_progress = CourseProgress.objects.get(user=user, course_id=course_id)
+            serializer = CourseProgressSerializer(course_progress)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except CourseProgress.DoesNotExist:
+            return Response({"error": "Progress not found"}, status=status.HTTP_404_NOT_FOUND)
+
+class CourseLessonsView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, course_id, *args, **kwargs):
+        lessons = Lessons.objects.filter(course_id=course_id)
+        if not lessons.exists():
+            return Response({"error": "No lessons found for this course."}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = LessonsSerializer(lessons, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class EventsViewSet(viewsets.ModelViewSet):
     queryset = Events.objects.all()

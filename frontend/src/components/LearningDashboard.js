@@ -1,86 +1,123 @@
 import React, { useState, useEffect } from "react";
-import { getCourses } from "../services/api";
 import {
-    Box,
-    Typography,
-    CircularProgress,
-    Grid,
-    Card,
-    CardContent,
-    CardActions,
-    Button,
-    Alert,
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Button,
 } from "@mui/material";
+import { getCourses } from "../services/api";
+import ViewCourseModal from "./ViewCourseModal"; // Import the modal component
 
 const LearningDashboard = () => {
-    const [courses, setCourses] = useState([]); // Courses state
-    const [loading, setLoading] = useState(true); // Loading state
-    const [error, setError] = useState(""); // Error state
+  const [courses, setCourses] = useState([]);
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
-    useEffect(() => {
-        const fetchCourses = async () => {
-            try {
-                const data = await getCourses(); // Fetch courses
-                setCourses(data);
-            } catch (err) {
-                console.error("Error fetching courses:", err);
-                setError("Failed to load courses. Please try again.");
-            } finally {
-                setLoading(false); // Stop loading
-            }
-        };
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const coursesData = await getCourses();
+        setCourses(coursesData);
+      } catch (error) {
+        console.error("Error fetching courses:", error);
+      }
+    };
 
-        fetchCourses();
-    }, []);
+    fetchCourses();
+  }, []);
 
-    return (
-        <Box sx={{ padding: 3 }}>
-            <Typography variant="h4" sx={{ mb: 3 }}>
-                Learning Dashboard
-            </Typography>
-            {loading ? (
-                <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-                    <CircularProgress />
-                </Box>
-            ) : error ? (
-                <Alert severity="error">{error}</Alert>
-            ) : courses.length > 0 ? (
-                <Grid container spacing={3}>
-                    {courses.map((course) => (
-                        <Grid item xs={12} sm={6} md={4} key={course.id}>
-                            <Card sx={{ height: "100%" }}>
-                                <CardContent>
-                                    <Typography variant="h5" component="div">
-                                        {course.title}
-                                    </Typography>
-                                    <Typography
-                                        variant="body2"
-                                        color="text.secondary"
-                                        sx={{ mt: 1 }}
-                                    >
-                                        {course.description || "No description available"}
-                                    </Typography>
-                                </CardContent>
-                                <CardActions>
-                                    <Button
-                                        size="small"
-                                        color="primary"
-                                        onClick={() =>
-                                            alert(`Selected Course: ${course.title}`)
-                                        }
-                                    >
-                                        View Course
-                                    </Button>
-                                </CardActions>
-                            </Card>
-                        </Grid>
-                    ))}
-                </Grid>
-            ) : (
-                <Typography>No courses available at the moment.</Typography>
-            )}
-        </Box>
-    );
+  const handleViewCourse = (course) => {
+    setSelectedCourse(course);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedCourse(null);
+  };
+
+  const styles = {
+    header: {
+      color: "green",
+      fontWeight: "bold",
+    },
+    card: {
+      backgroundColor: "#f5f5f5",
+      borderRadius: "8px",
+      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+      padding: "1rem",
+    },
+    tableHeader: {
+      backgroundColor: "green",
+      color: "white",
+      fontWeight: "bold",
+    },
+  };
+
+  return (
+    <Box sx={{ padding: 3 }}>
+      <Typography variant="h4" sx={styles.header} gutterBottom>
+        Learning Dashboard
+      </Typography>
+      <Card sx={styles.card}>
+        <CardContent>
+          <Typography variant="h5" sx={styles.header}>
+            Available Courses
+          </Typography>
+          <TableContainer component={Paper} sx={{ mt: 2 }}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell sx={styles.tableHeader}>Course Title</TableCell>
+                  <TableCell sx={styles.tableHeader}>Description</TableCell>
+                  <TableCell sx={styles.tableHeader}>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {courses.map((course) => (
+                  <TableRow key={course.course_id}>
+                    <TableCell>{course.title}</TableCell>
+                    <TableCell>{course.description}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="contained"
+                        onClick={() => handleViewCourse(course)}
+                        sx={{
+                          backgroundColor: "green",
+                          color: "white",
+                          "&:hover": { backgroundColor: "darkgreen" },
+                        }}
+                      >
+                        View Course
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </CardContent>
+      </Card>
+
+      {/* View Course Modal */}
+      {selectedCourse && (
+        <ViewCourseModal
+          open={modalOpen}
+          onClose={closeModal}
+          courseId={selectedCourse.course_id}
+          courseTitle={selectedCourse.title}
+        />
+      )}
+    </Box>
+  );
 };
 
 export default LearningDashboard;

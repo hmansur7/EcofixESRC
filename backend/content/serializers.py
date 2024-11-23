@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import User, Courses, Progress, Events
+from .models import CourseProgress, LessonProgress, Lessons, User, Courses, Events
 from django.contrib.auth.models import User
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
@@ -37,11 +37,6 @@ class CoursesSerializer(serializers.ModelSerializer):
         model = Courses
         fields = '__all__'
 
-class ProgressSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Progress
-        fields = '__all__'
-
 class EventsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Events
@@ -53,4 +48,21 @@ class UserRegisteredEventsListSerializer(serializers.ModelSerializer):
         model = Events
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
 
-        
+class CourseProgressSerializer(serializers.ModelSerializer):
+    course = CoursesSerializer(read_only=True)
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = CourseProgress
+        fields = ['id', 'user', 'course', 'progress_percentage']
+
+
+class LessonProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonProgress
+        fields = ['id', 'user', 'lesson', 'completed']
+
+class LessonsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lessons
+        fields = ['lesson_id', 'course', 'title', 'description', 'content', 'order']
