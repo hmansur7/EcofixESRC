@@ -67,10 +67,6 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
       fontWeight: "bold",
       marginTop: "1rem",
     },
-    checkbox: {
-      display: "flex",
-      alignItems: "center",
-    },
   };
 
   return (

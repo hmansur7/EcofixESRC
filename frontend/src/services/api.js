@@ -108,8 +108,8 @@ export const getEventRegistrations = async (eventId) => {
 };
 
 // User Progress APIs
-export const updateLessonProgress = async (lessonId, progressData) => {
-    const response = await API.post(`lesson/${lessonId}/progress/`, progressData);
+export const updateLessonProgress = async (lessonId, completed) => {
+    const response = await API.post(`lesson/${lessonId}/progress/`, { completed });
     return response.data;
 };
 

@@ -20,24 +20,24 @@ const ProgressDashboard = () => {
   const [progressData, setProgressData] = useState({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch courses and their progress
   const fetchProgressData = async () => {
     try {
       const coursesList = await getCourses();
       setCourses(coursesList);
 
-      const progressPromises = coursesList.map(async (course) => {
-        const progress = await getCourseProgress(course.course_id);
-        return { courseId: course.course_id, progress };
-      });
-
-      const progressResults = await Promise.all(progressPromises);
       const progressMap = {};
-      progressResults.forEach(({ courseId, progress }) => {
-        progressMap[courseId] = progress.completion_percentage;
+      const progressPromises = coursesList.map(async (course) => {
+        try {
+          const progress = await getCourseProgress(course.course_id);
+          progressMap[course.course_id] = progress.progress_percentage;
+        } catch (error) {
+          console.error(`Error fetching progress for course ${course.course_id}:`, error);
+          progressMap[course.course_id] = 0; // Default to 0 if error occurs
+        }
       });
-      setProgressData(progressMap);
 
+      await Promise.all(progressPromises);
+      setProgressData(progressMap);
       setLoading(false);
     } catch (error) {
       console.error("Error fetching progress data:", error);
@@ -117,7 +117,7 @@ const ProgressDashboard = () => {
                             sx={styles.progressBar}
                           />
                           <Typography sx={styles.progressLabel}>
-                            {progressData[course.course_id] || 0}%
+                            {progressData[course.course_id]?.toFixed(2) || "0"}%
                           </Typography>
                         </Box>
                       </TableCell>
