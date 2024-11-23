@@ -34,10 +34,15 @@ class Command(BaseCommand):
             if course.title in lesson_data:
                 self.stdout.write(f"Adding lessons to course: {course.title}")
                 lessons = [
-                    Lessons(course=course, title=lesson["title"], description=lesson["description"])
-                    for lesson in lesson_data[course.title]
+                    Lessons(
+                        course=course,
+                        title=lesson["title"],
+                        description=lesson["description"],
+                        order=index + 1  
+                    )
+                    for index, lesson in enumerate(lesson_data[course.title])
                 ]
                 Lessons.objects.bulk_create(lessons, ignore_conflicts=True)
-                self.stdout.write(self.style.SUCCESS(f"Lessons added to {course.title}"))
+                self.stdout.write(self.style.SUCCESS(f"Lessons added to {course.title} with correct order"))
             else:
                 self.stdout.write(self.style.WARNING(f"No lesson data found for course: {course.title}"))

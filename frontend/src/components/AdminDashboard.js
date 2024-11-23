@@ -33,6 +33,7 @@ import {
   getEventRegistrations,
   logoutUser,
 } from "../services/api";
+import LessonManagement from "./LessonManagement";
 
 const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
@@ -48,6 +49,8 @@ const AdminDashboard = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [registeredUsers, setRegisteredUsers] = useState([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
   const navigate = useNavigate();
 
@@ -143,6 +146,16 @@ const AdminDashboard = () => {
     setRegisteredUsers([]);
   };
 
+  const openLessonDialog = (course) => {
+    setSelectedCourse(course);
+    setIsLessonDialogOpen(true);
+  };
+
+  const closeLessonDialog = () => {
+    setSelectedCourse(null);
+    setIsLessonDialogOpen(false);
+  };
+
   const styles = {
     header: {
       color: "green",
@@ -167,7 +180,7 @@ const AdminDashboard = () => {
   };
 
   return (
-<Box sx={{ padding: 3 }}>
+    <Box sx={{ padding: 3 }}>
       <Box
         sx={{
           display: "flex",
@@ -198,6 +211,43 @@ const AdminDashboard = () => {
         </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
+
+      {/* User Management */}
+      <Card sx={{ mb: 3, ...styles.card }}>
+        <CardContent>
+          <Typography variant="h5" sx={styles.header}>
+            Registered Users
+          </Typography>
+          {users.length > 0 ? (
+            <TableContainer component={Paper} sx={{ mt: 2 }}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell sx={styles.tableHeader}>ID</TableCell>
+                    <TableCell sx={styles.tableHeader}>Name</TableCell>
+                    <TableCell sx={styles.tableHeader}>Email</TableCell>
+                    <TableCell sx={styles.tableHeader}>Role</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {users.map((user) => (
+                    <TableRow key={user.user_id}>
+                      <TableCell>{user.user_id}</TableCell>
+                      <TableCell>{user.name}</TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>{user.role}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Typography variant="body1" sx={{ mt: 2 }}>
+              No registered users found.
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Course Management */}
       <Card sx={{ mb: 3, ...styles.card }}>
@@ -267,7 +317,8 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Include Lesson Management Dialog */}
+     
+      {/* Lesson Management Dialog */}
       {selectedCourse && (
         <LessonManagement
           open={isLessonDialogOpen}

@@ -66,3 +66,10 @@ class LessonsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Lessons
         fields = ['lesson_id', 'course', 'title', 'description', 'content', 'order']
+        extra_kwargs = {
+            'title': {'required': True},
+            'description': {'required': True},
+            'content': {'required': True},
+            'order': {'required': True},
+            'course': {'required': False},  # Set by `perform_create`
+        }

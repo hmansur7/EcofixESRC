@@ -1,3 +1,4 @@
+from django.forms import ValidationError
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
@@ -89,7 +90,9 @@ class CourseLessonsView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, course_id, *args, **kwargs):
-        lessons = Lessons.objects.filter(course_id=course_id)
+        # Fetch lessons for the course, ordered by the 'order' field
+        lessons = Lessons.objects.filter(course_id=course_id).order_by('order')
+        
         if not lessons.exists():
             return Response({"error": "No lessons found for this course."}, status=status.HTTP_404_NOT_FOUND)
         
@@ -283,6 +286,8 @@ class AdminAddLessonView(CreateAPIView):
 
     def perform_create(self, serializer):
         course_id = self.request.data.get("course_id")
+        if not course_id:
+            raise ValidationError({"error": "course_id is required."})
         course = get_object_or_404(Courses, course_id=course_id)
         serializer.save(course=course)
 
