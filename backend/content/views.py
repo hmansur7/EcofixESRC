@@ -9,7 +9,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
 from .models import User, Courses, Progress, Events, Registration
-from .serializers import UserSerializer, CoursesSerializer, ProgressSerializer, EventsSerializer
+from .serializers import UserSerializer, CoursesSerializer, ProgressSerializer, EventsSerializer, UserRegisteredEventsListSerializer
 from .permissions import IsAdmin  # Import the custom permission class
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -95,7 +95,7 @@ class RegisterForEventView(APIView):
 
     def post(self, request, event_id):
         # Get the event object from the database
-        event = Events.objects.filter(id=event_id).first()
+        event = Events.objects.filter(event_id=event_id).first()
 
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -110,6 +110,33 @@ class RegisterForEventView(APIView):
         # Return success response
         return Response({"message": "You have successfully registered for the event."}, status=status.HTTP_201_CREATED)
 
+class UserRegisteredEventsListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        registered_events = Registration.objects.filter(user=request.user)
+        events = [registration.event for registration in registered_events]
+        serializer = UserRegisteredEventsListSerializer(events, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UnregisterFromEventView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, event_id):
+        try:
+            # Find the registration for the user and event
+            registration = Registration.objects.filter(user=request.user, event__event_id=event_id).first()
+
+            if not registration:
+                return Response({"error": "You are not registered for this event."}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Delete the registration
+            registration.delete()
+            return Response({"message": "You have successfully unregistered from the event."}, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
 # Admin Views
 class AdminUserListView(ListAPIView):
     """
@@ -165,3 +192,20 @@ class AdminRemoveEventView(DestroyAPIView):
     queryset = Events.objects.all()
     serializer_class = EventsSerializer
     lookup_field = 'event_id'  
+
+class AdminEventRegistrationsView(APIView):
+    permission_classes = [IsAdmin]  # Ensure only admins can access
+
+    def get(self, request, event_id, *args, **kwargs):
+        # Check if the event exists
+        event = Events.objects.filter(event_id=event_id).first()
+        if not event:
+            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        # Get registrations for the event
+        registrations = Registration.objects.filter(event=event).select_related('user')
+        users = [registration.user for registration in registrations]
+
+        # Serialize user data
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

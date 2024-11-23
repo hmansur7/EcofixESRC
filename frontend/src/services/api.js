@@ -87,4 +87,24 @@ export const getAdminUsers = async () => {
     return response.data;
 };
 
+export const registerUserEvent = async (eventId) => {
+    const response = await API.post(`event/${eventId}/register/`);
+    return response.data;
+};
+
+export const getUserRegisteredEvents = async () => {
+    const response = await API.get(`event/list/`);
+    return response.data;
+};
+
+export const unregisterUserEvent = async (eventId) => {
+    const response = await API.delete(`event/${eventId}/unregister/`);
+    return response.data;
+};
+
+export const getEventRegistrations = async (eventId) => {
+    const response = await API.get(`admin/events/${eventId}/registrations/`);
+    return response.data; 
+};
+
 export default API;

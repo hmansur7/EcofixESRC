@@ -47,3 +47,10 @@ class EventsSerializer(serializers.ModelSerializer):
         model = Events
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
         
+
+class UserRegisteredEventsListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Events
+        fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
+
+        

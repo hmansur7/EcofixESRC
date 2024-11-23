@@ -5,7 +5,8 @@ from content.views import (
     UserViewSet, CoursesViewSet, ProgressViewSet, EventsViewSet,
     RegisterView, LoginView, AdminUserListView,
     AdminAddCourseView, AdminRemoveCourseView, AdminAddEventView, AdminRemoveEventView, 
-    AdminListCoursesView, AdminListEventsView, RegisterForEventView
+    AdminListCoursesView, AdminListEventsView, RegisterForEventView, UserRegisteredEventsListView,
+    UnregisterFromEventView, AdminEventRegistrationsView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -24,15 +25,16 @@ urlpatterns = [
     # Authentication endpoints
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
-    path('api/auth/event/<int:event_id>/register/', RegisterForEventView.as_view(), name='register_for_event'),
-
+    path('api/event/<int:event_id>/register/', RegisterForEventView.as_view(), name='register_for_event'),
+    path('api/event/list/', UserRegisteredEventsListView.as_view(), name='registered-events-list'),
+    path('api/event/<int:event_id>/unregister/', UnregisterFromEventView.as_view(), name='unregister_event'),
     # Admin-specific endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),
     path('api/admin/courses/add/', AdminAddCourseView.as_view(), name='admin-add-course'),
     path('api/admin/courses/remove/<int:course_id>/', AdminRemoveCourseView.as_view(), name='admin-remove-course'),
     path('api/admin/events/add/', AdminAddEventView.as_view(), name='admin-add-event'),
     path('api/admin/events/remove/<int:event_id>/', AdminRemoveEventView.as_view(), name='admin-remove-event'),
-
+    path('api/admin/events/<int:event_id>/registrations/', AdminEventRegistrationsView.as_view(), name='admin-event-registrations'),
     # Default DRF router paths
     path('api/', include(router.urls)),
     path('api/admin/courses/', AdminListCoursesView.as_view(), name='admin-list-courses'),

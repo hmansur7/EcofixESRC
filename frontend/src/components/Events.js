@@ -1,157 +1,159 @@
-import React, { useState, useEffect } from 'react';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css'; // Base styles for react-calendar
-import Axios from 'axios';
+import React, { useState, useEffect } from "react";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import {
+    getEvents,
+    registerUserEvent,
+    unregisterUserEvent,
+    getUserRegisteredEvents,
+} from "../services/api";
 
 const EventsPage = () => {
     const [date, setDate] = useState(new Date()); // Selected date
     const [events, setEvents] = useState([]); // All events
     const [registeredEvents, setRegisteredEvents] = useState([]); // User-registered events
     const [loading, setLoading] = useState(true); // Loading state for events
-    const [error, setError] = useState(''); // Error state
-    const [userToken, setUserToken] = useState(localStorage.getItem('authToken')); // Authentication token
+    const [error, setError] = useState(""); // Error state
 
-    // Fetch events from the backend
+    // Fetch all events from the backend
+    const fetchEvents = async () => {
+        try {
+            const response = await getEvents(); // Fetch all events
+            setEvents(response);
+            setError(""); // Clear any previous errors
+        } catch (error) {
+            console.error("Error fetching events:", error);
+            setError("Failed to load events. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Fetch registered events for the user
+    const fetchRegisteredEvents = async () => {
+        try {
+            const response = await getUserRegisteredEvents(); // Fetch registered events
+            setRegisteredEvents(response);
+            setError(""); // Clear any previous errors
+        } catch (error) {
+            console.error("Error fetching registered events:", error);
+            setError("Failed to load registered events. Please try again.");
+        }
+    };
+
+    // Fetch data on component mount
     useEffect(() => {
-        const fetchEvents = async () => {
-            try {
-                const response = await Axios.get('http://127.0.0.1:8000/api/events/', {
-                    headers: {
-                        'Authorization': `Token ${userToken}`,
-                    },
-                });
-                setEvents(response.data);
-                setError(''); // Clear any previous errors
-            } catch (error) {
-                console.error('Error fetching events:', error);
-                setError('Failed to load events. Please try again.');
-            } finally {
-                setLoading(false);
-            }
-        };
-
         fetchEvents();
-    }, [userToken]); // Empty dependency array ensures this only runs once when the component mounts
+        fetchRegisteredEvents();
+    }, []);
 
     // Get events for the selected date
-    const eventsForSelectedDate = events.filter(
-        (event) => event.start_time.split('T')[0] === date.toISOString().split('T')[0]
-    );
+    const eventsForSelectedDate = events.filter((event) => {
+        const selectedDate = date.toISOString().split("T")[0];
+        const startDate = event.start_time.split("T")[0];
+        const endDate = event.end_time.split("T")[0];
+        return selectedDate >= startDate && selectedDate <= endDate;
+    });
 
     // Handle event registration
     const handleRegister = async (eventId) => {
         try {
-            // Ensure the eventId is valid
-            if (!eventId) {
-                alert('Invalid event ID');
-                return;
-            }
-    
-            // Send the POST request to the backend to register for the event
-            const response = await Axios.post(
-                `http://127.0.0.1:8000/api/auth/event/${eventId}/register/`,
-                {}, // Empty body if not required by the backend
-                {
-                    headers: {
-                        'Authorization': `Token ${userToken}`, // Ensure you send the correct token
-                    },
-                }
+            const response = await registerUserEvent(eventId); // Register user for event
+            alert(response.message); // Show success message
+            fetchRegisteredEvents(); // Refresh registered events
+        } catch (error) {
+            console.error("Error registering for event:", error);
+            alert(
+                error.response?.data?.error || "An error occurred while registering. Please try again."
             );
-    
-            // Handle successful registration
-            if (response.status === 201) {
-                alert('Successfully registered for the event!');
-                // Optionally, fetch registered events again to update the UI
-                fetchRegisteredEvents();
-            } else {
-                alert('Error registering for event: ' + response.data.error);
-            }
-        } catch (error) {
-            console.error('Error registering for event:', error);
-            alert('An error occurred while registering for the event. Please try again.');
         }
     };
 
-    // Fetch events the user is registered for
-    const fetchRegisteredEvents = async () => {
+    // Handle unregistering from an event
+    const handleUnregister = async (eventId) => {
         try {
-            const response = await Axios.get('http://127.0.0.1:8000/api/events/', {
-                headers: {
-                    'Authorization': `Token ${userToken}`,
-                },
-            });
-            const registeredEvents = response.data.filter((event) => event.attendees.includes(userToken));
-            setRegisteredEvents(registeredEvents);
+            const response = await unregisterUserEvent(eventId); // Unregister user from event
+            alert(response.message); // Show success message
+            fetchRegisteredEvents(); // Refresh registered events
         } catch (error) {
-            console.error('Error fetching registered events:', error);
+            console.error("Error unregistering from event:", error);
+            alert(
+                error.response?.data?.error || "An error occurred while unregistering. Please try again."
+            );
         }
     };
-
-    useEffect(() => {
-        if (userToken) {
-            fetchRegisteredEvents();
-        }
-    }, [userToken]);
 
     // Styles
     const styles = {
         container: {
-            display: 'flex',
-            justifyContent: 'space-between',
-            padding: '20px',
-            fontFamily: 'Arial, sans-serif',
+            display: "flex",
+            justifyContent: "space-between",
+            padding: "20px",
+            fontFamily: "Arial, sans-serif",
         },
         calendarAndEvents: {
             flex: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
         },
         calendar: {
-            marginBottom: '20px',
+            marginBottom: "20px",
         },
         eventsList: {
-            listStyleType: 'none',
+            listStyleType: "none",
             padding: 0,
         },
         eventItem: {
-            padding: '10px',
-            border: '1px solid #ddd',
-            marginBottom: '10px',
-            borderRadius: '5px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
+            padding: "10px",
+            border: "1px solid #ddd",
+            marginBottom: "10px",
+            borderRadius: "5px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
         },
         registerButton: {
-            backgroundColor: '#007bff',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            padding: '5px 10px',
-            cursor: 'pointer',
+            backgroundColor: "#007bff",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            padding: "5px 10px",
+            cursor: "pointer",
+        },
+        unregisterButton: {
+            backgroundColor: "red",
+            color: "white",
+            border: "none",
+            borderRadius: "4px",
+            padding: "5px 10px",
+            cursor: "pointer",
+            marginLeft: "10px", // Add spacing to avoid cramping
         },
         loading: {
-            textAlign: 'center',
-            fontSize: '16px',
-            color: '#888',
+            textAlign: "center",
+            fontSize: "16px",
+            color: "#888",
         },
         errorMessage: {
-            color: 'red',
-            textAlign: 'center',
-            marginTop: '20px',
+            color: "red",
+            textAlign: "center",
+            marginTop: "20px",
         },
         registeredEvents: {
-            marginTop: '20px',
-            paddingLeft: '20px',
-            borderTop: '1px solid #ddd',
-            paddingTop: '20px',
+            marginTop: "20px",
+            paddingLeft: "20px",
+            borderTop: "1px solid #ddd",
+            paddingTop: "20px",
         },
         registeredEventItem: {
-            padding: '10px',
-            border: '1px solid #ddd',
-            marginBottom: '10px',
-            borderRadius: '5px',
+            padding: "10px",
+            border: "1px solid #ddd",
+            marginBottom: "10px",
+            borderRadius: "5px",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
         },
     };
 
@@ -173,7 +175,7 @@ const EventsPage = () => {
                 ) : eventsForSelectedDate.length > 0 ? (
                     <ul style={styles.eventsList}>
                         {eventsForSelectedDate.map((event) => (
-                            <li key={event.id} style={styles.eventItem}>
+                            <li key={event.event_id} style={styles.eventItem}>
                                 <span>
                                     {event.title} <br />
                                     Start: {new Date(event.start_time).toLocaleString()} <br />
@@ -199,7 +201,7 @@ const EventsPage = () => {
                 ) : events.length > 0 ? (
                     <ul style={styles.eventsList}>
                         {events.map((event) => (
-                            <li key={event.id} style={styles.eventItem}>
+                            <li key={event.event_id} style={styles.eventItem}>
                                 <span>
                                     {event.title} <br />
                                     Start: {new Date(event.start_time).toLocaleString()} <br />
@@ -219,7 +221,7 @@ const EventsPage = () => {
                 )}
             </div>
 
-            {/* Registered Events on the right side */}
+            {/* Registered Events */}
             <div style={styles.registeredEvents}>
                 <h2>Your Registered Events:</h2>
                 {loading ? (
@@ -227,12 +229,18 @@ const EventsPage = () => {
                 ) : registeredEvents.length > 0 ? (
                     <ul style={styles.eventsList}>
                         {registeredEvents.map((event) => (
-                            <li key={event.id} style={styles.registeredEventItem}>
+                            <li key={event.event_id} style={styles.registeredEventItem}>
                                 <span>
                                     {event.title} <br />
                                     Start: {new Date(event.start_time).toLocaleString()} <br />
                                     End: {new Date(event.end_time).toLocaleString()}
                                 </span>
+                                <button
+                                    style={styles.unregisterButton}
+                                    onClick={() => handleUnregister(event.event_id)}
+                                >
+                                    Unregister
+                                </button>
                             </li>
                         ))}
                     </ul>
