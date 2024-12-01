@@ -95,6 +95,7 @@ A comprehensive Learning Management System (LMS) built with Django (backend) and
 - **React**: JavaScript library for building user interfaces.
 - **Material-UI**: Component library for responsive UI design.
 - **Axios**: For API integration and HTTP requests.
+- **Node**: Node Package Manager (NPM) for required dependencies 
 
 ---
 
