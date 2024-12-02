@@ -5,7 +5,7 @@ A comprehensive Learning Management System (LMS) built with Django (backend) and
 ## Features
 
 ### Admin Dashboard
-- **User Management**: View and manage registered users.
+- **User Management**: View registered users.
 - **Course Management**: Add, edit, and delete courses.
 - **Lesson Management**: Manage lessons for courses, including adding, reordering, and deleting lessons.
 - **Event Management**: Create, edit, delete, and view registrations for events.
@@ -88,7 +88,7 @@ A comprehensive Learning Management System (LMS) built with Django (backend) and
 ### Backend
 - **Django**: Web framework for the backend.
 - **Django REST Framework**: For building REST APIs.
-- **PostgreSQL/MySQL**: Database support (customizable).
+- **MySQL**: Database support.
 - **Django ORM**: For database interactions.
 
 ### Frontend
@@ -115,12 +115,6 @@ A comprehensive Learning Management System (LMS) built with Django (backend) and
 
 ### Course Progress
 ![Course Progress](screenshots/course-progress.png)
-
----
-
-## License
-
-This project is licensed under the [MIT License](LICENSE).
 
 ---
 
