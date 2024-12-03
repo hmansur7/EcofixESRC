@@ -25,7 +25,7 @@ A comprehensive Learning Management System (LMS) built with Django (backend) and
 ### Backend
 - Powered by **Django REST Framework** with REST APIs for all operations.
 - **Role-Based Access Control** to differentiate between admin and user roles.
-- Database integration with PostgreSQL/MySQL (customizable).
+- Database integration with MySQL.
 
 ---
 
