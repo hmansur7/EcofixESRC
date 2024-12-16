@@ -298,7 +298,11 @@ const AdminDashboard = () => {
                       <Button
                         variant="outlined"
                         onClick={() => openLessonDialog(course)}
-                        sx={{ marginRight: 2 }}
+                        sx={{
+                          textTransform: "none",
+                          marginRight: 2,
+                          backgroundColor: "lightblue",
+                        }}
                       >
                         Manage Lessons
                       </Button>

@@ -223,7 +223,7 @@ const LessonManagement = ({ open, onClose, course }) => {
                 sx={{
                   backgroundColor: "darkred",
                   color: "white",
-                  alignSelf: "flex-end",
+                  "&:hover": { backgroundColor: "red" },
                 }}
               >
                 Close
