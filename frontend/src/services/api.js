@@ -127,6 +127,13 @@ export const addAdminLesson = async (lessonData) => {
     return response.data;
 };
 
+export const addLessonResource = async (lessonResourceData) => {
+    const response = await API.post("admin/lesson-resources/add/", lessonResourceData, {
+        headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+};
+
 export const removeAdminLesson = async (lessonId) => {
     const response = await API.delete(`admin/lessons/remove/${lessonId}/`);
     return response.data;

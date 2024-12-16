@@ -3,7 +3,6 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions,
   Typography,
   Table,
   TableBody,
@@ -18,7 +17,12 @@ import {
   Divider,
 } from "@mui/material";
 import { Delete } from "@mui/icons-material";
-import { getLessonsForCourse, addAdminLesson, removeAdminLesson } from "../services/api";
+import {
+  getLessonsForCourse,
+  addAdminLesson,
+  removeAdminLesson,
+  addLessonResource,
+} from "../services/api";
 
 const LessonManagement = ({ open, onClose, course }) => {
   const [lessons, setLessons] = useState([]);
@@ -27,6 +31,7 @@ const LessonManagement = ({ open, onClose, course }) => {
     description: "",
     content: "",
     order: "",
+    file: null,
   });
 
   // Fetch lessons when the dialog opens or the course changes
@@ -51,24 +56,52 @@ const LessonManagement = ({ open, onClose, course }) => {
       !newLesson.title ||
       !newLesson.description ||
       !newLesson.content ||
-      !newLesson.order
+      !newLesson.order ||
+      !newLesson.file
     ) {
-      alert("Please fill in all fields.");
+      alert("Please fill in all fields and upload a file.");
       return;
     }
 
     try {
+      // Step 1: Add the lesson details (without the file)
       const lessonData = {
-        ...newLesson,
-        course_id: course.course_id,
+        title: newLesson.title,
+        description: newLesson.description,
+        content: newLesson.content,
+        order: newLesson.order,
+        course_id: course.course_id, // Course association
       };
-      await addAdminLesson(lessonData);
+
+      const lessonResponse = await addAdminLesson(lessonData);
       alert("Lesson added successfully!");
-      setNewLesson({ title: "", description: "", content: "", order: "" }); // Reset form
-      fetchLessons(course.course_id); // Refresh lessons
+
+      // Step 2: Upload the file to the newly created lesson
+      const formData = new FormData();
+      formData.append("title", newLesson.title);
+      formData.append("file", newLesson.file);
+      formData.append("lesson", lessonResponse.lesson_id); // Assume the response includes lesson_id
+
+      await addLessonResource(formData); // Call API to upload the file
+      alert("File uploaded successfully!");
+
+      // Step 3: Reset form and refresh the list
+      setNewLesson({
+        title: "",
+        description: "",
+        content: "",
+        order: "",
+        file: null,
+      });
+      fetchLessons(course.course_id); // Refresh lessons list
     } catch (error) {
-      console.error("Error adding lesson:", error.response?.data || error.message);
-      alert("Failed to add lesson. Check the console for more details.");
+      console.error(
+        "Error adding lesson or file:",
+        error.response?.data || error.message
+      );
+      alert(
+        "Failed to add lesson or upload file. Check the console for more details."
+      );
     }
   };
 
@@ -119,6 +152,7 @@ const LessonManagement = ({ open, onClose, course }) => {
             </TableContainer>
             <Divider sx={{ mt: 3, mb: 3 }} />
             <Typography variant="h6">Add New Lesson</Typography>
+
             <TextField
               label="Lesson Title"
               fullWidth
@@ -156,25 +190,48 @@ const LessonManagement = ({ open, onClose, course }) => {
               }
               sx={{ mt: 2 }}
             />
-            <Button
-              variant="contained"
-              onClick={handleAddLesson}
-              sx={{ mt: 3 }}
+            <input
+              type="file"
+              onChange={(e) =>
+                setNewLesson({ ...newLesson, file: e.target.files[0] })
+              }
+              style={{ marginTop: "16px" }}
+            />
+
+            {/* Button Container for proper alignment */}
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: "20px",
+              }}
             >
-              Add Lesson
-            </Button>
+              <Button
+                variant="contained"
+                onClick={handleAddLesson}
+                sx={{
+                  alignSelf: "flex-start",
+                  backgroundColor: "primary.main",
+                }}
+              >
+                Add Lesson
+              </Button>
+
+              <Button
+                onClick={onClose}
+                variant="contained"
+                sx={{
+                  backgroundColor: "darkred",
+                  color: "white",
+                  alignSelf: "flex-end",
+                }}
+              >
+                Close
+              </Button>
+            </div>
           </>
         )}
       </DialogContent>
-      <DialogActions>
-        <Button
-          onClick={onClose}
-          variant="contained"
-          sx={{ backgroundColor: "darkred", color: "white" }}
-        >
-          Close
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

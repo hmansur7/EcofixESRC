@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-import os
+
 
 class UserManager(BaseUserManager):
     def create_user(self, email, name, password=None, **extra_fields):
