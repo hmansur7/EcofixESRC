@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 import os
 
 class UserManager(BaseUserManager):
@@ -46,19 +47,32 @@ class Courses(models.Model):
 
 class Lessons(models.Model):
     lesson_id = models.AutoField(primary_key=True)
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='lessons')  # ForeignKey to Courses model
+    course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='lessons')  
     title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)  # Optional description of the lesson
-    content = models.TextField(null=True, blank=True)  # You can store text content, or this could be replaced with a file field
-    order = models.PositiveIntegerField(default=0)  # Order of lessons in a course (useful for sequencing lessons)
-    
+    description = models.TextField(null=True, blank=True)  
+    content = models.TextField(null=True, blank=True)  
+    order = models.PositiveIntegerField(default=0)  
+
     def __str__(self):
         return f"Lesson: {self.title} (Course: {self.course.title})"
+
+# Added LessonResources model
+class LessonResources(models.Model):
+    title = models.CharField(max_length=100)
+    file = models.FileField(
+        upload_to='lesson_resources/', 
+        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'zip', 'jpg', 'jpeg', 'png', 'docx', 'pptx', 'xlsx'])]
+        )
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    lesson = models.ForeignKey(Lessons, on_delete=models.CASCADE, related_name='resources')
+
+    def __str__(self):
+        return f"{self.title} - {os.path.basename(self.file.name)}"
 
 class CourseProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     course = models.ForeignKey(Courses, on_delete=models.CASCADE)
-    progress_percentage = models.FloatField(default=0.0)  # Store progress percentage
+    progress_percentage = models.FloatField(default=0.0) 
 
     def __str__(self):
         return f"{self.user.name} - {self.course.title} - {self.progress_percentage}%"
@@ -66,7 +80,7 @@ class CourseProgress(models.Model):
 class LessonProgress(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     lesson = models.ForeignKey(Lessons, on_delete=models.CASCADE)
-    completed = models.BooleanField(default=False)  # Track whether the lesson is completed
+    completed = models.BooleanField(default=False)  
 
     def __str__(self):
         return f"{self.user.name} - {self.lesson.title} - {'Completed' if self.completed else 'Not Completed'}"
@@ -95,4 +109,4 @@ class Registration(models.Model):
         return f"{self.user.name} registered for {self.event.title}"
 
     class Meta:
-        unique_together = ('user', 'event')  # Ensure a user can't register for the same event more than once
+        unique_together = ('user', 'event') 

@@ -9,8 +9,8 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth import get_user_model
-from .models import CourseProgress, LessonProgress, Lessons, User, Courses, Events, Registration
-from .serializers import CourseProgressSerializer, LessonsSerializer, UserSerializer, CoursesSerializer, EventsSerializer, UserRegisteredEventsListSerializer
+from .models import CourseProgress, LessonProgress, Lessons, User, Courses, Events, Registration, LessonResources
+from .serializers import CourseProgressSerializer, LessonsSerializer, UserSerializer, CoursesSerializer, EventsSerializer, UserRegisteredEventsListSerializer, LessonResourceSerializer
 from .permissions import IsAdmin  # Import the custom permission class
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
@@ -99,6 +99,14 @@ class CourseLessonsView(APIView):
         serializer = LessonsSerializer(lessons, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+class ListLessonResourcesView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        resources = LessonResources.objects.all()
+        serializer = LessonResourceSerializer(resources, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
 class EventsViewSet(viewsets.ModelViewSet):
     queryset = Events.objects.all()
     serializer_class = EventsSerializer
@@ -291,6 +299,24 @@ class AdminAddLessonView(CreateAPIView):
         course = get_object_or_404(Courses, course_id=course_id)
         serializer.save(course=course)
 
+class AddLessonResourceView(APIView):
+    permission_classes = [IsAdmin]
+    def post(self, request):
+        serializer = LessonResourceSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class DeleteLessonResourceView(APIView):
+    permission_classes = [IsAdmin]
+    def delete(self, request, pk):
+        try:
+            resource = LessonResources.objects.get(pk=pk)
+            resource.delete()
+            return Response({"detail": "Resource deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
+        except LessonResources.DoesNotExist:
+            return Response({"detail": "Resource not found."}, status=status.HTTP_404_NOT_FOUND)
 
 class AdminRemoveLessonView(DestroyAPIView):
     """
