@@ -132,7 +132,12 @@ class RegisterView(APIView):
             return Response({"error": "Email is already taken!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            token, _ = Token.objects.get_or_create(user=User)
+            user = UserModel.objects.create(
+                name=name,
+                email=email,
+                password=make_password(password)
+            )
+            token, _ = Token.objects.get_or_create(user=user)
             return Response({"message": "User registered successfully!", "token": token.key}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": f"Registration failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -166,25 +171,23 @@ class EventListView(APIView):
         serializer = EventsSerializer(events, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class RegisterForEventView(APIView):
-    permission_classes = [IsAuthenticated]
+class AdminEventRegistrationsView(APIView):
+    permission_classes = [IsAdmin]  # Ensure only admins can access
 
-    def post(self, request, event_id):
-        # Get the event object from the database
+    def get(self, request, event_id, *args, **kwargs):
+        # Check if the event exists
         event = Events.objects.filter(id=event_id).first()
-
+        
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # Check if the user is already registered for this event
-        if Registration.objects.filter(user=request.user, event=event).exists():
-            return Response({"error": "You are already registered for this event."}, status=status.HTTP_400_BAD_REQUEST)
+        # Get registrations for the event
+        registrations = Registration.objects.filter(event=event).select_related('user')
+        users = [registration.user for registration in registrations]
 
-        # Create the registration record
-        registration = Registration.objects.create(user=request.user, event=event)
-
-        # Return success response
-        return Response({"message": "You have successfully registered for the event."}, status=status.HTTP_201_CREATED)
+        # Serialize user data
+        serializer = UserSerializer(users, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class UserRegisteredEventsListView(APIView):
     permission_classes = [IsAuthenticated]
