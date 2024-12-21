@@ -96,7 +96,7 @@ DATABASES = {
 
 # User
 
-AUTH_USER_MODEL = 'content.User'
+AUTH_USER_MODEL = 'content.AppUser'
 
 
 # Password validation

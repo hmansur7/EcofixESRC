@@ -5,7 +5,7 @@ from content.views import (
     UserViewSet, CoursesViewSet, EventsViewSet,
     RegisterView, LoginView, AdminUserListView,
     AdminAddCourseView, AdminRemoveCourseView, AdminAddEventView, AdminRemoveEventView, 
-    AdminListCoursesView, AdminListEventsView, RegisterForEventView, UserRegisteredEventsListView,
+    AdminListCoursesView, AdminListEventsView, RegisterView, UserRegisteredEventsListView,
     UnregisterFromEventView, AdminEventRegistrationsView, UpdateLessonProgressView, GetCourseProgressView,
     CourseLessonsView, AdminAddLessonView, AdminRemoveLessonView, ListLessonResourcesView, AddLessonResourceView, 
     DeleteLessonResourceView,
@@ -27,7 +27,7 @@ urlpatterns = [
     path('api/auth/register/', RegisterView.as_view(), name='register'),
     path('api/auth/login/', LoginView.as_view(), name='login'),
     # User-specific endpoints
-    path('api/event/<int:event_id>/register/', RegisterForEventView.as_view(), name='register_for_event'),
+    path('api/event/<int:event_id>/register/', RegisterView.as_view(), name='register_for_event'),
     path('api/event/list/', UserRegisteredEventsListView.as_view(), name='registered-events-list'),
     path('api/event/<int:event_id>/unregister/', UnregisterFromEventView.as_view(), name='unregister_event'),
     path('api/lesson/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update_lesson_progress'),

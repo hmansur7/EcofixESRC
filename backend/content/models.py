@@ -80,14 +80,18 @@ class LessonResource(models.Model):
         return f"{self.title} - {os.path.basename(self.file.name)}"
 
 class CourseProgress(models.Model):
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
     progress_percentage = models.FloatField(default=0.0, null=False, blank=False) 
 
     def __str__(self):
         return f"{self.user.name} - {self.course.title} - {self.progress_percentage}%"
 
 class LessonProgress(models.Model):
-    def __str__(self):
-        return f"{self.user.name} - {self.lesson.title} - {'Completed' if self.completed else 'Not Completed'}"
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE)
+    completed = models.BooleanField(default=False)
+
     def __str__(self):
         return f"{self.user.name} - {self.lesson.title} - {'Completed' if self.completed else 'Not Completed'}"
 

@@ -1,99 +1,74 @@
 from rest_framework import serializers
-from .models import CourseProgress, LessonProgress, Lessons, Courses, Events, LessonResources
-from django.contrib.auth import get_user_model
-
-User = get_user_model()
-CustomUser = get_user_model()
+from .models import (
+    CourseProgress,
+    LessonProgress,
+    Lesson,  # Changed from Lessons
+    Course,  # Changed from Courses
+    Event,   # Changed from Events
+    LessonResource,  # Changed from LessonResources
+    AppUser  # Your custom user model
+)
 
 class UserSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the User model.
-    """
     class Meta:
-        model = User
+        model = AppUser  # Changed from User
         fields = ['name', 'email', 'password', 'role']
-        extra_kwargs = {'password': {'write_only': True}}  # Password is write-only
+        extra_kwargs = {'password': {'write_only': True}}
 
     def to_representation(self, instance):
-        """
-        Exclude the password field in read operations (responses).
-        """
         representation = super().to_representation(instance)
-        representation.pop('password', None)  # Remove password from response
+        representation.pop('password', None)
         return representation
 
     def create(self, validated_data):
-        """
-        Create a user with a hashed password.
-        """
-        user = CustomUser.objects.create_user(
-            username=validated_data['username'],
+        # Updated to match your AppUser model's fields
+        return AppUser.objects.create_user(
+            email=validated_data['email'],
             name=validated_data['name'],
             password=validated_data['password'],
         )
-        return user
 
-
-class CoursesSerializer(serializers.ModelSerializer):
+class CourseSerializer(serializers.ModelSerializer):  # Changed from CoursesSerializer
     class Meta:
-        model = Courses
-        fields = '__all__'
+        model = Course  # Changed from Courses
+        fields = ['course_id', 'title', 'description']
 
-class EventsSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the Events model, used to convert event instances to and from JSON.
-    """
+class EventSerializer(serializers.ModelSerializer):  # Changed from EventsSerializer
     class Meta:
-        model = Events
-        fields = '__all__'
+        model = Event  # Changed from Events
+        fields = ['event_id', 'title', 'description', 'start_time', 'end_time', 'attendees']
 
 class UserRegisteredEventsListSerializer(serializers.ModelSerializer):
-    """
-    Serializer for listing events registered by a user.
-    """
     class Meta:
-        model = Events
+        model = Event  # Changed from Events
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
 
 class CourseProgressSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the CourseProgress model, used to convert course progress instances to and from JSON.
-    """
-    course = CoursesSerializer(read_only=True)
+    course = CourseSerializer(read_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = CourseProgress
-        fields = ['course', 'user', 'progress']
+        fields = ['course', 'user', 'progress_percentage']  # Changed from 'progress' to match model
 
 class LessonProgressSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the LessonProgress model.
-    """
     class Meta:
         model = LessonProgress
         fields = ['id', 'user', 'lesson', 'completed']
 
-class LessonsSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the Lessons model, used to convert lesson instances to and from JSON.
-    """
+class LessonSerializer(serializers.ModelSerializer):  # Changed from LessonsSerializer
     class Meta:
-        model = Lessons
-        fields = ['lesson_id', 'course', 'title', 'description', 'content', 'order']
+        model = Lesson  # Changed from Lessons
+        fields = ['lesson_id', 'course', 'title', 'description', 'order']  # Removed 'content' as it's not in your model
         extra_kwargs = {
             'title': {'required': True},
             'description': {'required': True},
-            'content': {'required': True},
             'order': {'required': True},
         }
 
 class LessonResourceSerializer(serializers.ModelSerializer):
-    """
-    Serializer for the LessonResources model, used to convert lesson resource instances to and from JSON.
-    """
     class Meta:
-        model = LessonResources
+        model = LessonResource  # Changed from LessonResources
         fields = ['title', 'file', 'uploaded_at', 'lesson']
         extra_kwargs = {
             'title': {'required': True},
@@ -103,14 +78,14 @@ class LessonResourceSerializer(serializers.ModelSerializer):
         read_only_fields = ['uploaded_at']
 
     def validate_file(self, value):
-        max_size_mb = 10  
+        max_size_mb = 10
         if value.size > max_size_mb * 1024 * 1024:
             raise serializers.ValidationError(f'File size should not exceed {max_size_mb} MB.')
 
-        allowed_mime_types = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 
-                              'application/vnd.openxmlformats-officedocument.presentationml.presentation']
+        allowed_extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'zip']  # Updated to match model
+        file_extension = value.name.split('.')[-1].lower()
         
-        if value.content_type not in allowed_mime_types:
-            raise serializers.ValidationError('Unsupported file type.')
+        if file_extension not in allowed_extensions:
+            raise serializers.ValidationError(f'Unsupported file type. Allowed types: {", ".join(allowed_extensions)}')
 
         return value
