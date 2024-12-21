@@ -1,15 +1,17 @@
 from rest_framework import serializers
-from .models import CourseProgress, LessonProgress, Lessons, User, Courses, Events, LessonResources
-from django.contrib.auth.models import User
-from rest_framework import serializers
+from .models import CourseProgress, LessonProgress, Lessons, Courses, Events, LessonResources
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
+CustomUser = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the User model.
+    """
     class Meta:
         model = User
-        fields = ['user_id', 'name', 'email', 'password', 'role']
+        fields = ['name', 'email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}  # Password is write-only
 
     def to_representation(self, instance):
@@ -24,8 +26,8 @@ class UserSerializer(serializers.ModelSerializer):
         """
         Create a user with a hashed password.
         """
-        user = User.objects.create_user(
-            email=validated_data['email'],
+        user = CustomUser.objects.create_user(
+            username=validated_data['username'],
             name=validated_data['name'],
             password=validated_data['password'],
         )
@@ -38,31 +40,44 @@ class CoursesSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class EventsSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Events model, used to convert event instances to and from JSON.
+    """
     class Meta:
         model = Events
-        fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
-        
+        fields = '__all__'
 
 class UserRegisteredEventsListSerializer(serializers.ModelSerializer):
+    """
+    Serializer for listing events registered by a user.
+    """
     class Meta:
         model = Events
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
 
 class CourseProgressSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the CourseProgress model, used to convert course progress instances to and from JSON.
+    """
     course = CoursesSerializer(read_only=True)
     user = UserSerializer(read_only=True)
 
     class Meta:
         model = CourseProgress
-        fields = ['id', 'user', 'course', 'progress_percentage']
-
+        fields = ['course', 'user', 'progress']
 
 class LessonProgressSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the LessonProgress model.
+    """
     class Meta:
         model = LessonProgress
         fields = ['id', 'user', 'lesson', 'completed']
 
 class LessonsSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the Lessons model, used to convert lesson instances to and from JSON.
+    """
     class Meta:
         model = Lessons
         fields = ['lesson_id', 'course', 'title', 'description', 'content', 'order']
@@ -71,11 +86,12 @@ class LessonsSerializer(serializers.ModelSerializer):
             'description': {'required': True},
             'content': {'required': True},
             'order': {'required': True},
-            'course': {'required': False},  
         }
 
-#Serializer for resources endpoint
 class LessonResourceSerializer(serializers.ModelSerializer):
+    """
+    Serializer for the LessonResources model, used to convert lesson resource instances to and from JSON.
+    """
     class Meta:
         model = LessonResources
         fields = ['title', 'file', 'uploaded_at', 'lesson']

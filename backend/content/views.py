@@ -16,11 +16,11 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib import messages
 from .utils import calculate_course_progress
 
-User = get_user_model()
+UserModel = get_user_model()
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
+    queryset = UserModel.objects.all()
     serializer_class = UserSerializer
 
 class CoursesViewSet(viewsets.ModelViewSet):
@@ -33,9 +33,9 @@ class LessonsViewSet(viewsets.ModelViewSet):
     serializer_class = LessonsSerializer
 
 class LessonsListView(APIView):
-    def get(self, request, course_id):
-        # Filter lessons by the provided course_id
-        lessons = Lessons.objects.filter(course_id=course_id).order_by('order')
+    def get(self, request, course):
+        # Filter lessons by the provided course
+        lessons = Lessons.objects.filter(course=course).order_by('order')
         serializer = LessonsSerializer(lessons, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -46,20 +46,22 @@ class UpdateLessonProgressView(APIView):
         user = request.user
         try:
             # Fetch the lesson
-            lesson = Lessons.objects.get(lesson_id=lesson_id)
+            lesson = Lessons.objects.get(id=lesson_id)
         except Lessons.DoesNotExist:
             return Response({"error": "Lesson not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Update or create lesson progress
         lesson_progress, _ = LessonProgress.objects.get_or_create(user=user, lesson=lesson)
-        lesson_progress.completed = request.data.get('completed', False)
+        completed = request.data.get('completed', False)
+        if not isinstance(completed, bool):
+            return Response({"error": "Invalid value for 'completed'. It must be a boolean."}, status=status.HTTP_400_BAD_REQUEST)
+        lesson_progress.completed = completed
         lesson_progress.save()
 
         # Update course progress
         self.update_course_progress(user, lesson.course)
-
+        course_progress = CourseProgress.objects.get(user=user, course=lesson.course)
         return Response({"message": "Lesson progress updated successfully."}, status=status.HTTP_200_OK)
-
     def update_course_progress(self, user, course):
         # Get all lessons for this course
         lessons = Lessons.objects.filter(course=course)
@@ -69,18 +71,19 @@ class UpdateLessonProgressView(APIView):
         # Calculate progress as a percentage
         progress_percentage = (completed_lessons / total_lessons) * 100 if total_lessons > 0 else 0
 
-        # Update or create course progress record
-        course_progress, _ = CourseProgress.objects.get_or_create(user=user, course=course)
-        course_progress.progress_percentage = progress_percentage
-        course_progress.save()
+        # Bulk update course progress record
+        CourseProgress.objects.update_or_create(
+            user=user, course=course,
+            defaults={'progress_percentage': progress_percentage}
+        )
 
 class GetCourseProgressView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, course_id):
+    def get(self, request, course):
         user = request.user
         try:
-            course_progress = CourseProgress.objects.get(user=user, course_id=course_id)
+            course_progress = CourseProgress.objects.get(user=user, course=course)
             serializer = CourseProgressSerializer(course_progress)
             return Response(serializer.data, status=status.HTTP_200_OK)
         except CourseProgress.DoesNotExist:
@@ -89,9 +92,9 @@ class GetCourseProgressView(APIView):
 class CourseLessonsView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, course_id, *args, **kwargs):
+    def get(self, request, course, *args, **kwargs):
         # Fetch lessons for the course, ordered by the 'order' field
-        lessons = Lessons.objects.filter(course_id=course_id).order_by('order')
+        lessons = Lessons.objects.filter(course=course).order_by('order')
         
         if not lessons.exists():
             return Response({"error": "No lessons found for this course."}, status=status.HTTP_404_NOT_FOUND)
@@ -125,12 +128,11 @@ class RegisterView(APIView):
         if not name or not email or not password:
             return Response({"error": "All fields are required!"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(email=email).exists():
+        if UserModel.objects.filter(email=email).exists():
             return Response({"error": "Email is already taken!"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            user = User.objects.create_user(name=name, email=email, password=password)
-            token, _ = Token.objects.get_or_create(user=user)
+            token, _ = Token.objects.get_or_create(user=User)
             return Response({"message": "User registered successfully!", "token": token.key}, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({"error": f"Registration failed: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -150,7 +152,7 @@ class LoginView(APIView):
             token, _ = Token.objects.get_or_create(user=user)
             return Response({
                 "token": token.key,
-                "role": user.role  # Include the user's role in the response
+                "role": getattr(user, 'role', None)  # Include the user's role in the response
             }, status=status.HTTP_200_OK)
         else:
             return Response({"error": "Invalid email or password."}, status=status.HTTP_400_BAD_REQUEST)
@@ -169,7 +171,7 @@ class RegisterForEventView(APIView):
 
     def post(self, request, event_id):
         # Get the event object from the database
-        event = Events.objects.filter(event_id=event_id).first()
+        event = Events.objects.filter(id=event_id).first()
 
         if not event:
             return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
@@ -199,7 +201,7 @@ class UnregisterFromEventView(APIView):
     def delete(self, request, event_id):
         try:
             # Find the registration for the user and event
-            registration = Registration.objects.filter(user=request.user, event__event_id=event_id).first()
+            registration = Registration.objects.filter(user=request.user, event__id=event_id).first()
 
             if not registration:
                 return Response({"error": "You are not registered for this event."}, status=status.HTTP_400_BAD_REQUEST)
@@ -246,7 +248,7 @@ class AdminRemoveCourseView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Courses.objects.all()
     serializer_class = CoursesSerializer
-    lookup_field = 'course_id'  
+    lookup_field = 'id'  
 
 
 class AdminAddEventView(CreateAPIView):
@@ -265,16 +267,16 @@ class AdminRemoveEventView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Events.objects.all()
     serializer_class = EventsSerializer
-    lookup_field = 'event_id'  
+    lookup_field = 'id'  
 
 class AdminEventRegistrationsView(APIView):
     permission_classes = [IsAdmin]  # Ensure only admins can access
 
     def get(self, request, event_id, *args, **kwargs):
         # Check if the event exists
-        event = Events.objects.filter(event_id=event_id).first()
-        if not event:
-            return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
+        event = Events.objects.filter(id=event_id).first()
+        event = Events.objects.filter(id=event_id).first()
+        return Response({"error": "Event not found."}, status=status.HTTP_404_NOT_FOUND)
 
         # Get registrations for the event
         registrations = Registration.objects.filter(event=event).select_related('user')
@@ -291,14 +293,13 @@ class AdminAddLessonView(CreateAPIView):
     permission_classes = [IsAdmin]
     queryset = Lessons.objects.all()
     serializer_class = LessonsSerializer
-
     def perform_create(self, serializer):
-        course_id = self.request.data.get("course_id")
-        if not course_id:
-            raise ValidationError({"error": "course_id is required."})
-        course = get_object_or_404(Courses, course_id=course_id)
+        course = self.request.data.get("course")
+        if not course:
+            raise ValidationError({"error": "course is required."})
+        course = get_object_or_404(Courses, pk=course)
         serializer.save(course=course)
-
+        serializer.save(course=course)
 class AddLessonResourceView(APIView):
     permission_classes = [IsAdmin]
     def post(self, request):
@@ -310,9 +311,9 @@ class AddLessonResourceView(APIView):
 
 class DeleteLessonResourceView(APIView):
     permission_classes = [IsAdmin]
-    def delete(self, request, pk):
+    def delete(self, request, id):
         try:
-            resource = LessonResources.objects.get(pk=pk)
+            resource = LessonResources.objects.get(id=id)
             resource.delete()
             return Response({"detail": "Resource deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         except LessonResources.DoesNotExist:
@@ -325,4 +326,4 @@ class AdminRemoveLessonView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Lessons.objects.all()
     serializer_class = LessonsSerializer
-    lookup_field = 'lesson_id'
+    lookup_field = 'id'

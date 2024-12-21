@@ -1,18 +1,31 @@
+import os
 from django.db import models
-from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
 
+USER_ROLES = [
+    ('user', 'User'),
+    ('admin', 'Admin'),
+]
 
-class UserManager(BaseUserManager):
+class UserManager(models.Manager):
     def create_user(self, email, name, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field is required")
-        email = self.normalize_email(email)
+        self.validate_email(email)
         user = self.model(email=email, name=name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
+
+    def validate_email(self, email):
+        from django.core.validators import validate_email as django_validate_email
+        try:
+            django_validate_email(email)
+        except ValidationError:
+            raise ValueError("Invalid email format")
 
     def create_superuser(self, email, name, password=None, **extra_fields):
         extra_fields.setdefault('is_staff', True)
@@ -23,11 +36,10 @@ class UserManager(BaseUserManager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self.create_user(email, name, password, **extra_fields)
 
-class User(AbstractBaseUser, PermissionsMixin):
-    user_id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    email = models.EmailField(unique=True)
-    role = models.CharField(max_length=10, choices=[('user', 'User'), ('admin', 'Admin')], default='user')
+class AppUser(AbstractBaseUser, PermissionsMixin):
+    name = models.CharField(max_length=255, null=False, blank=False)
+    email = models.EmailField(unique=True, null=False, blank=False)
+    role = models.CharField(max_length=10, choices=USER_ROLES, default='user', null=False, blank=False)
     
     objects = UserManager()
 
@@ -36,62 +48,56 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.email
-
-class Courses(models.Model):
-    course_id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=255)
+    
+class Course(models.Model):
+    course_id = models.AutoField(primary_key=True, null=False, blank=False)
+    title = models.CharField(max_length=255, null=False, blank=False, unique=True)
     description = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return self.title
 
-class Lessons(models.Model):
-    lesson_id = models.AutoField(primary_key=True)
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE, related_name='lessons')  
-    title = models.CharField(max_length=255)
-    description = models.TextField(null=True, blank=True)  
-    content = models.TextField(null=True, blank=True)  
-    order = models.PositiveIntegerField(default=0)  
+class Lesson(models.Model):
+    lesson_id = models.AutoField(primary_key=True, null=False, blank=False)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')  
+    title = models.CharField(max_length=255, null=False, blank=False)
+    description = models.TextField(null=True, blank=True)    
+    order = models.PositiveIntegerField(default=0, null=False, blank=False)  
 
     def __str__(self):
         return f"Lesson: {self.title} (Course: {self.course.title})"
 
-# Added LessonResources model
-class LessonResources(models.Model):
-    title = models.CharField(max_length=100)
+class LessonResource(models.Model):
+    title = models.CharField(max_length=100, null=False, blank=False)
     file = models.FileField(
         upload_to='lesson_resources/', 
         validators=[FileExtensionValidator(allowed_extensions=['pdf', 'zip', 'jpg', 'jpeg', 'png', 'docx', 'pptx', 'xlsx'])]
         )
-    uploaded_at = models.DateTimeField(auto_now_add=True)
-    lesson = models.ForeignKey(Lessons, on_delete=models.CASCADE, related_name='resources')
+    uploaded_at = models.DateTimeField(auto_now_add=True, null=False, blank=False)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources', null=False, blank=False)
 
     def __str__(self):
         return f"{self.title} - {os.path.basename(self.file.name)}"
 
 class CourseProgress(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    course = models.ForeignKey(Courses, on_delete=models.CASCADE)
-    progress_percentage = models.FloatField(default=0.0) 
+    progress_percentage = models.FloatField(default=0.0, null=False, blank=False) 
 
     def __str__(self):
         return f"{self.user.name} - {self.course.title} - {self.progress_percentage}%"
 
 class LessonProgress(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    lesson = models.ForeignKey(Lessons, on_delete=models.CASCADE)
-    completed = models.BooleanField(default=False)  
-
+    def __str__(self):
+        return f"{self.user.name} - {self.lesson.title} - {'Completed' if self.completed else 'Not Completed'}"
     def __str__(self):
         return f"{self.user.name} - {self.lesson.title} - {'Completed' if self.completed else 'Not Completed'}"
 
-class Events(models.Model):
+class Event(models.Model):
     event_id = models.AutoField(primary_key=True)
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=50, null=False, blank=False)
     description = models.TextField(null=True, blank=True)
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-    attendees = models.ManyToManyField(User, related_name='events_signed_up', blank=True)
+    start_time = models.DateTimeField(null=False, blank=False)
+    end_time = models.DateTimeField(null=False, blank=False)
+    attendees = models.ManyToManyField(AppUser, related_name='events', blank=True)
 
     def clean(self):
         if self.end_time <= self.start_time:
@@ -100,13 +106,14 @@ class Events(models.Model):
     def __str__(self):
         return f"{self.title} on {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}"
 
-
-class Registration(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='registrations')
-    event = models.ForeignKey(Events, on_delete=models.CASCADE, related_name='registrations')
+class Registrations(models.Model):
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name='registrations')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='registrations')
 
     def __str__(self):
         return f"{self.user.name} registered for {self.event.title}"
 
     class Meta:
-        unique_together = ('user', 'event') 
+        constraints = [
+            models.UniqueConstraint(fields=['user', 'event'], name='unique_user_event')
+        ]
