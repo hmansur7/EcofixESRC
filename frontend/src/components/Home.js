@@ -24,7 +24,7 @@ const HomePage = () => {
       <Box
         sx={{
           minHeight: "100vh",
-          backgroundColor: "green",
+          backgroundColor: "#ffffff",
           color: "white",
           display: "flex",
           flexDirection: "column",
@@ -32,39 +32,27 @@ const HomePage = () => {
           alignItems: "center",
         }}
       >
-        {/* Custom Eco Icon (Using an Emoji 🌿) */}
-        <Box
-          sx={{
-            fontSize: 100,
-            marginBottom: 2,
-          }}
-        >
-          🌿
-        </Box>
         <Typography
           variant="h2"
           align="center"
           sx={{
             fontWeight: "bold",
-            textShadow: "2px 2px 10px rgba(0,0,0,0.5)",
+            color: "#000000",
             marginBottom: 2,
           }}
-        >
-          Educational Resources and Sustainability <br/>
-          Content Hub
+        > 
+          VirtuLearn<sub style={{fontSize: "0.5em", verticalAlign: "super"}}>TM</sub>
         </Typography>
         <Typography
           variant="h6"
           align="center"
           sx={{
             maxWidth: 600,
-            textShadow: "1px 1px 5px rgba(0,0,0,0.5)",
+            color: "#14213d",
             marginBottom: 4,
           }}
         >
-          Expand your knowledge of sustainability and eco-friendly practices
-          and register for our events. Join us on our mission of moving towards
-          a greener future.
+          Experience a new kind of learning<br />
         </Typography>
         <Grid container spacing={2} justifyContent="center">
           <Grid item>
@@ -72,9 +60,9 @@ const HomePage = () => {
               variant="contained"
               startIcon={<Login />}
               sx={{
-                backgroundColor: "white",
-                color: "green",
-                "&:hover": { backgroundColor: "lightgreen" },
+                backgroundColor: "#14213d",
+                color: "#ffffff",
+                "&:hover": { backgroundColor: "#fca311" },
                 paddingX: 4,
                 paddingY: 1.5,
               }}
@@ -85,10 +73,11 @@ const HomePage = () => {
           </Grid>
           <Grid item>
             <Button
-              variant="outlined"
+              variant="contained"
               startIcon={<PersonAdd />}
               sx={{
-                color: "white",
+                color: "#fca311",
+                backgroundColor: "transparent",
                 borderColor: "white",
                 "&:hover": {
                   backgroundColor: "rgba(255,255,255,0.2)",
