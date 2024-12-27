@@ -28,8 +28,6 @@ const Login = () => {
     e.preventDefault();
     try {
         const response = await loginUser(formData.email, formData.password);
-        
-        // Redirect based on role
         const role = response.role;
         if (role === "admin") {
             navigate("/admin/dashboard");

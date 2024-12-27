@@ -46,6 +46,11 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
 
+    class Meta:
+        db_table = 'content_appuser'
+        verbose_name = 'user'
+        verbose_name_plural = 'users'
+    
     def __str__(self):
         return self.email
     

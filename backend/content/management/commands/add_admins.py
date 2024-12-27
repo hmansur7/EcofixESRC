@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from content.models import User
+from content.models import AppUser
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -10,12 +10,6 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         admins = [
             {
-                'email': 'hsivasun@admin.com',
-                'name': 'Haresh',
-                'password': 'admin',  # Change this to a secure password in production
-                'role': 'admin'
-            },
-            {
                 'email': 'hmansur@admin.com',
                 'name': 'Haarish',
                 'password': 'admin',  # Change this to a secure password in production
@@ -24,7 +18,7 @@ class Command(BaseCommand):
         ]
 
         for admin in admins:
-            if not User.objects.filter(email=admin['email']).exists():
+            if not AppUser.objects.filter(email=admin['email']).exists():
                 User.objects.create_user(
                     email=admin['email'],
                     name=admin['name'],

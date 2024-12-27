@@ -21,7 +21,6 @@ class UserSerializer(serializers.ModelSerializer):
         return representation
 
     def create(self, validated_data):
-        # Updated to match your AppUser model's fields
         return AppUser.objects.create_user(
             email=validated_data['email'],
             name=validated_data['name'],
