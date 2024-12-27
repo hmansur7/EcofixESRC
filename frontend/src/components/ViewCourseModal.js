@@ -26,7 +26,12 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
       const fetchLessons = async () => {
         try {
           const lessonsData = await getLessonsForCourse(courseId);
-          setLessons(lessonsData);
+          console.log('API Response for Lessons:', lessonsData);
+          const normalizedLessons = lessonsData.map((lesson) => ({
+            ...lesson,
+            completed: lesson.completed === 1,
+          }));
+          setLessons(normalizedLessons);
         } catch (error) {
           console.error("Error fetching lessons:", error);
           setLessons([]);
@@ -41,7 +46,7 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
 
   const handleLessonCompletion = async (lessonId, completed) => {
     try {
-      await updateLessonProgress(lessonId, completed);
+      await updateLessonProgress(lessonId, completed);  // Make sure this updates the backend correctly
       setLessons((prevLessons) =>
         prevLessons.map((lesson) =>
           lesson.lesson_id === lessonId ? { ...lesson, completed } : lesson
@@ -51,7 +56,7 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
       console.error("Error updating lesson progress:", error);
     }
   };
-
+  
   const styles = {
     header: {
       color: "green",
@@ -110,9 +115,12 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
                     </TableCell>
                     <TableCell>
                       <Checkbox
-                        checked={lesson.completed}
+                        checked={lesson.completed} // Ensure the checkbox reflects the 'completed' status
                         onChange={(e) =>
-                          handleLessonCompletion(lesson.lesson_id, e.target.checked)
+                          handleLessonCompletion(
+                            lesson.lesson_id,
+                            e.target.checked
+                          )
                         }
                       />
                     </TableCell>

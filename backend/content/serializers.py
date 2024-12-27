@@ -55,15 +55,24 @@ class LessonProgressSerializer(serializers.ModelSerializer):
         model = LessonProgress
         fields = ['id', 'user', 'lesson', 'completed']
 
-class LessonSerializer(serializers.ModelSerializer):  # Changed from LessonsSerializer
+class LessonSerializer(serializers.ModelSerializer):
+    completed = serializers.SerializerMethodField()  # Add completed status
+
+    def get_completed(self, obj):
+        # Check if the current user has completed the lesson
+        user = self.context['request'].user
+        # Check if a progress entry exists and if it is marked as completed
+        return LessonProgress.objects.filter(user=user, lesson=obj, completed=True).exists()
+
     class Meta:
-        model = Lesson  # Changed from Lessons
-        fields = ['lesson_id', 'course', 'title', 'description', 'order']  # Removed 'content' as it's not in your model
+        model = Lesson
+        fields = ['lesson_id', 'course', 'title', 'description', 'order', 'completed']
         extra_kwargs = {
             'title': {'required': True},
             'description': {'required': True},
             'order': {'required': True},
         }
+
 
 class LessonResourceSerializer(serializers.ModelSerializer):
     class Meta:

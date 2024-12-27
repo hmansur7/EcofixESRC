@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from content.models import Courses, Lessons
+from content.models import Course, Lesson
 
 class Command(BaseCommand):
     help = 'Add lessons to existing courses in the database'
@@ -28,13 +28,13 @@ class Command(BaseCommand):
             ],
         }
 
-        courses = Courses.objects.all()
+        courses = Course.objects.all()
 
         for course in courses:
             if course.title in lesson_data:
                 self.stdout.write(f"Adding lessons to course: {course.title}")
                 lessons = [
-                    Lessons(
+                    Lesson(
                         course=course,
                         title=lesson["title"],
                         description=lesson["description"],
@@ -42,7 +42,7 @@ class Command(BaseCommand):
                     )
                     for index, lesson in enumerate(lesson_data[course.title])
                 ]
-                Lessons.objects.bulk_create(lessons, ignore_conflicts=True)
+                Lesson.objects.bulk_create(lessons, ignore_conflicts=True)
                 self.stdout.write(self.style.SUCCESS(f"Lessons added to {course.title} with correct order"))
             else:
                 self.stdout.write(self.style.WARNING(f"No lesson data found for course: {course.title}"))

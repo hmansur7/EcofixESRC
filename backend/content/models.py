@@ -36,6 +36,9 @@ class UserManager(models.Manager):
             raise ValueError("Superuser must have is_superuser=True.")
         return self.create_user(email, name, password, **extra_fields)
 
+    def get_by_natural_key(self, username):
+        return self.get(**{self.model.USERNAME_FIELD: username})
+    
 class AppUser(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255, null=False, blank=False)
     email = models.EmailField(unique=True, null=False, blank=False)

@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
-from content.models import Events
+from content.models import Event
 from django.utils.timezone import make_aware
-from datetime import datetime, timedelta
+from datetime import datetime
 
 class Command(BaseCommand):
     help = 'Add company events to the database'
@@ -37,7 +37,7 @@ class Command(BaseCommand):
 
         # Create events in the database
         for event_data in events_data:
-            event, created = Events.objects.get_or_create(
+            event, created = Event.objects.get_or_create(
                 title=event_data['title'],
                 defaults={
                     'description': event_data['description'],

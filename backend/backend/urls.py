@@ -5,6 +5,8 @@ from content.views import (
     UserViewSet, 
     CourseViewSet,  # Will need to be renamed to CourseViewSet
     EventViewSet,   # Will need to be renamed to EventViewSet
+    UserEventsView,
+    EventRegistrationView,
     RegisterView, 
     LoginView, 
     AdminUserListView,
@@ -44,14 +46,14 @@ urlpatterns = [
     path('api/auth/login/', LoginView.as_view(), name='login'),
     
     # Event endpoints
-    path('api/events/<int:id>/register/', RegisterView.as_view(), name='register-for-event'),
+    path('api/events/<int:event_id>/register/', EventRegistrationView.as_view(), name='register-for-event'),
     path('api/events/registered/', UserRegisteredEventsListView.as_view(), name='registered-events-list'),
-    path('api/events/<int:id>/unregister/', UnregisterFromEventView.as_view(), name='unregister-event'),
-    
+    path('api/events/<int:event_id>/unregister/', UnregisterFromEventView.as_view(), name='unregister-event'),
+    path('api/events/user/list/', UserEventsView.as_view(), name='user-event-list'),
     # Course and Lesson endpoints
-    path('api/lessons/<int:id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
-    path('api/courses/<int:id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
-    path('api/courses/<int:id>/lessons/', CourseLessonsView.as_view(), name='course-lessons'),
+    path('api/lessons/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
+    path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
+    path('api/courses/<int:course_id>/lessons/', CourseLessonsView.as_view(), name='course-lessons'),
     path('api/lessons/resources/', ListLessonResourcesView.as_view(), name='list-lesson-resources'),
     
     # Admin endpoints

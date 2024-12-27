@@ -77,17 +77,17 @@ export const getAdminUsers = async () => {
 };
 
 export const registerUserEvent = async (eventId) => {
-    const response = await API.post(`event/${eventId}/register/`);
+    const response = await API.post(`events/${eventId}/register/`);
     return response.data;
 };
 
 export const getUserRegisteredEvents = async () => {
-    const response = await API.get(`event/list/`);
+    const response = await API.get(`events/user/list/`);
     return response.data;
 };
 
 export const unregisterUserEvent = async (eventId) => {
-    const response = await API.delete(`event/${eventId}/unregister/`);
+    const response = await API.delete(`events/${eventId}/unregister/`);
     return response.data;
 };
 
@@ -97,12 +97,12 @@ export const getEventRegistrations = async (eventId) => {
 };
 
 export const updateLessonProgress = async (lessonId, completed) => {
-    const response = await API.post(`lesson/${lessonId}/progress/`, { completed });
+    const response = await API.post(`lessons/${lessonId}/progress/`, { completed });
     return response.data;
 };
 
 export const getCourseProgress = async (courseId) => {
-    const response = await API.get(`course/${courseId}/progress/`);
+    const response = await API.get(`courses/${courseId}/progress/`);
     return response.data;
 };
 
