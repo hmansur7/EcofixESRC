@@ -26,11 +26,12 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
       const fetchLessons = async () => {
         try {
           const lessonsData = await getLessonsForCourse(courseId);
-          console.log('API Response for Lessons:', lessonsData);
+          console.log('Raw lessons data:', lessonsData);
           const normalizedLessons = lessonsData.map((lesson) => ({
             ...lesson,
-            completed: lesson.completed === 1,
+            completed: Boolean(lesson.completed),
           }));
+          console.log('Normalized lessons:', normalizedLessons);
           setLessons(normalizedLessons);
         } catch (error) {
           console.error("Error fetching lessons:", error);
