@@ -2,16 +2,16 @@ from rest_framework import serializers
 from .models import (
     CourseProgress,
     LessonProgress,
-    Lesson,  # Changed from Lessons
-    Course,  # Changed from Courses
-    Event,   # Changed from Events
-    LessonResource,  # Changed from LessonResources
-    AppUser  # Your custom user model
+    Lesson,  
+    Course,  
+    Event,   
+    LessonResource,  
+    AppUser
 )
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AppUser  # Changed from User
+        model = AppUser 
         fields = ['name', 'email', 'password', 'role']
         extra_kwargs = {'password': {'write_only': True}}
 
@@ -27,19 +27,19 @@ class UserSerializer(serializers.ModelSerializer):
             password=validated_data['password'],
         )
 
-class CourseSerializer(serializers.ModelSerializer):  # Changed from CoursesSerializer
+class CourseSerializer(serializers.ModelSerializer):  
     class Meta:
-        model = Course  # Changed from Courses
+        model = Course  
         fields = ['course_id', 'title', 'description']
 
-class EventSerializer(serializers.ModelSerializer):  # Changed from EventsSerializer
+class EventSerializer(serializers.ModelSerializer):  
     class Meta:
-        model = Event  # Changed from Events
+        model = Event  
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time', 'attendees']
 
 class UserRegisteredEventsListSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Event  # Changed from Events
+        model = Event 
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
 
 class CourseProgressSerializer(serializers.ModelSerializer):
@@ -48,7 +48,7 @@ class CourseProgressSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CourseProgress
-        fields = ['course', 'user', 'progress_percentage']  # Changed from 'progress' to match model
+        fields = ['course', 'user', 'progress_percentage']  
 
 class LessonProgressSerializer(serializers.ModelSerializer):
     class Meta:
@@ -56,13 +56,16 @@ class LessonProgressSerializer(serializers.ModelSerializer):
         fields = ['id', 'user', 'lesson', 'completed']
 
 class LessonSerializer(serializers.ModelSerializer):
-    completed = serializers.SerializerMethodField()  # Add completed status
+    completed = serializers.SerializerMethodField()  
 
     def get_completed(self, obj):
-        # Check if the current user has completed the lesson
         user = self.context['request'].user
-        # Check if a progress entry exists and if it is marked as completed
         return LessonProgress.objects.filter(user=user, lesson=obj, completed=True).exists()
+    
+    def validate_order(self, value):
+        if value < 1:
+            raise serializers.ValidationError("Order must be a positive number.")
+        return value
 
     class Meta:
         model = Lesson
@@ -73,27 +76,58 @@ class LessonSerializer(serializers.ModelSerializer):
             'order': {'required': True},
         }
 
+class LessonResourceBulkSerializer(serializers.Serializer):
+    lesson = serializers.PrimaryKeyRelatedField(queryset=Lesson.objects.all())
+    resources = serializers.ListField(
+        child=serializers.FileField(
+            max_length=None, 
+            allow_empty_file=False
+        ),
+        write_only=True
+    )
+    titles = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        write_only=True
+    )
+
+    def validate(self, data):
+        if len(data['resources']) != len(data['titles']):
+            raise serializers.ValidationError("Number of titles must match number of files")
+        
+        max_size_mb = 10
+        allowed_extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'zip']
+
+        for file in data['resources']:
+            if file.size > max_size_mb * 1024 * 1024:
+                raise serializers.ValidationError(f'File size should not exceed {max_size_mb} MB.')
+
+            file_extension = file.name.split('.')[-1].lower()
+            if file_extension not in allowed_extensions:
+                raise serializers.ValidationError(
+                    f'Unsupported file type. Allowed types: {", ".join(allowed_extensions)}'
+                )
+
+        return data
+
+    def create(self, validated_data):
+        lesson = validated_data['lesson']
+        resources = validated_data['resources']
+        titles = validated_data['titles']
+        
+        created_resources = []
+        
+        for file, title in zip(resources, titles):
+            resource = LessonResource.objects.create(
+                lesson=lesson,
+                file=file,
+                title=title
+            )
+            created_resources.append(resource)
+            
+        return created_resources
 
 class LessonResourceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = LessonResource  # Changed from LessonResources
-        fields = ['title', 'file', 'uploaded_at', 'lesson']
-        extra_kwargs = {
-            'title': {'required': True},
-            'file': {'required': True},
-            'lesson': {'required': True},
-        }
+        model = LessonResource  
+        fields = ['id', 'title', 'file', 'uploaded_at', 'lesson']
         read_only_fields = ['uploaded_at']
-
-    def validate_file(self, value):
-        max_size_mb = 10
-        if value.size > max_size_mb * 1024 * 1024:
-            raise serializers.ValidationError(f'File size should not exceed {max_size_mb} MB.')
-
-        allowed_extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'zip']  # Updated to match model
-        file_extension = value.name.split('.')[-1].lower()
-        
-        if file_extension not in allowed_extensions:
-            raise serializers.ValidationError(f'Unsupported file type. Allowed types: {", ".join(allowed_extensions)}')
-
-        return value

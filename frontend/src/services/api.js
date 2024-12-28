@@ -111,20 +111,25 @@ export const getLessonsForCourse = async (courseId) => {
     return response.data;
 };
 
+export const getLessonResources = async (lessonId) => {
+    const response = await API.get(`lessons/${lessonId}/resources/`);
+    return response.data;
+};
+
 export const addAdminLesson = async (lessonData) => {
-    const response = await API.post("admin/lessons/add/", lessonData);
+    const response = await API.post(`admin/lessons/add/`, lessonData);
     return response.data;
 };
 
 export const addLessonResource = async (lessonResourceData) => {
-    const response = await API.post("admin/lesson-resources/add/", lessonResourceData, {
+    const response = await API.post("admin/lessons/resources/add/", lessonResourceData, {
         headers: { "Content-Type": "multipart/form-data" },
     });
     return response.data;
 };
 
 export const removeAdminLesson = async (lessonId) => {
-    const response = await API.delete(`admin/lessons/remove/${lessonId}/`);
+    const response = await API.delete(`admin/lessons/${lessonId}/remove`);
     return response.data;
 };
 

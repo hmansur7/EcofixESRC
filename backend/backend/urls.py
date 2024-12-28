@@ -24,7 +24,7 @@ from content.views import (
     CourseLessonsView, 
     AdminAddLessonView, 
     AdminRemoveLessonView, 
-    ListLessonResourcesView, 
+    LessonResourcesView, 
     AddLessonResourceView,
     DeleteLessonResourceView,
 )
@@ -54,7 +54,7 @@ urlpatterns = [
     path('api/lessons/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
     path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
     path('api/courses/<int:course_id>/lessons/', CourseLessonsView.as_view(), name='course-lessons'),
-    path('api/lessons/resources/', ListLessonResourcesView.as_view(), name='list-lesson-resources'),
+     path('api/lessons/<int:lesson_id>/resources/', LessonResourcesView.as_view(), name='lesson-resources'),
     
     # Admin endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),
@@ -66,8 +66,8 @@ urlpatterns = [
     path('api/admin/events/<int:event_id>/remove/', AdminRemoveEventView.as_view(), name='admin-remove-event'),
     path('api/admin/events/<int:event_id>/registrations/', AdminEventRegistrationsView.as_view(), name='admin-event-registrations'),
     path('api/admin/lessons/add/', AdminAddLessonView.as_view(), name='admin-add-lesson'),
-    path('api/admin/lessons/<int:id>/', AdminRemoveLessonView.as_view(), name='admin-remove-lesson'),
-    path('api/admin/lessons/resources/', AddLessonResourceView.as_view(), name='add-lesson-resource'),
+    path('api/admin/lessons/<int:lesson_id>/remove', AdminRemoveLessonView.as_view(), name='admin-remove-lesson'),
+    path('api/admin/lessons/resources/add/', AddLessonResourceView.as_view(), name='add-lesson-resource'),
     path('api/admin/lessons/resources/<int:id>/', DeleteLessonResourceView.as_view(), name='delete-lesson-resource'),
     
     # Include router URLs

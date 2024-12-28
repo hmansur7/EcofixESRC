@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404
+from django.db import transaction
 from .models import (
     CourseProgress,
     LessonProgress,
@@ -26,7 +27,8 @@ from .serializers import (
     CourseSerializer,
     EventSerializer,
     UserRegisteredEventsListSerializer,
-    LessonResourceSerializer
+    LessonResourceSerializer,
+    LessonResourceBulkSerializer
 )
 from .permissions import IsAdmin
 
@@ -141,13 +143,13 @@ class GetCourseProgressView(APIView):
         serializer = CourseProgressSerializer(course_progress)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class ListLessonResourcesView(APIView):
+class LessonResourcesView(ListAPIView):
+    serializer_class = LessonResourceSerializer
     permission_classes = [IsAuthenticated]
 
-    def get(self, request):
-        resources = LessonResource.objects.all()
-        serializer = LessonResourceSerializer(resources, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+    def get_queryset(self):
+        lesson_id = self.kwargs.get('lesson_id')
+        return LessonResource.objects.filter(lesson_id=lesson_id).order_by('uploaded_at')
 
 class RegisterView(APIView):
     permission_classes = [AllowAny]
@@ -257,18 +259,57 @@ class AdminAddLessonView(CreateAPIView):
         course_id = self.request.data.get("course")
         if not course_id:
             raise ValidationError({"error": "course is required."})
+        
         course = get_object_or_404(Course, course_id=course_id)
-        serializer.save(course=course)
+        new_order = int(self.request.data.get('order'))
+
+        affected_lessons = Lesson.objects.filter(
+            course=course,
+            order__gte=new_order
+        ).order_by('order')
+
+        if affected_lessons.exists():
+            with transaction.atomic():
+                for lesson in affected_lessons:
+                    lesson.order += 1
+                    lesson.save()
+                
+                serializer.save(course=course)
+        else:
+            serializer.save(course=course)
 
 class AdminRemoveLessonView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Lesson.objects.all()
-    lookup_field = 'id'
+    lookup_field = 'lesson_id'
+
+    def perform_destroy(self, instance):
+        course = instance.course
+        deleted_order = instance.order
+
+        with transaction.atomic():
+            instance.delete()
+
+            lessons_to_update = Lesson.objects.filter(
+                course=course,
+                order__gt=deleted_order
+            ).order_by('order')
+
+            for lesson in lessons_to_update:
+                lesson.order -= 1
+                lesson.save()
 
 class AddLessonResourceView(CreateAPIView):
     permission_classes = [IsAdmin]
-    queryset = LessonResource.objects.all()
-    serializer_class = LessonResourceSerializer
+    serializer_class = LessonResourceBulkSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        resources = serializer.save()
+        
+        response_serializer = LessonResourceSerializer(resources, many=True)
+        return Response(response_serializer.data, status=status.HTTP_201_CREATED)
 
 class DeleteLessonResourceView(DestroyAPIView):
     permission_classes = [IsAdmin]

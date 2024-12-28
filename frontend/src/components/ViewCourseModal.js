@@ -14,8 +14,111 @@ import {
   Paper,
   Button,
   Checkbox,
+  Collapse,
+  IconButton,
+  Box,
 } from "@mui/material";
-import { getLessonsForCourse, updateLessonProgress } from "../services/api"; 
+import {
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+  Download,
+} from "@mui/icons-material";
+import {
+  getLessonsForCourse,
+  updateLessonProgress,
+  getLessonResources,
+} from "../services/api";
+
+const LessonRow = ({ lesson, onCompletionChange }) => {
+  const [open, setOpen] = useState(false);
+  const [resources, setResources] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchResources = async () => {
+    if (!open) {
+      setLoading(true);
+      try {
+        const data = await getLessonResources(lesson.lesson_id);
+        setResources(data);
+      } catch (error) {
+        console.error("Error fetching resources:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    setOpen(!open);
+  };
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          <IconButton size="small" onClick={fetchResources}>
+            {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+          </IconButton>
+        </TableCell>
+        <TableCell>{lesson.title}</TableCell>
+        <TableCell>{lesson.description}</TableCell>
+        <TableCell>
+          <Checkbox
+            checked={lesson.completed}
+            onChange={(e) =>
+              onCompletionChange(lesson.lesson_id, e.target.checked)
+            }
+          />
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
+          <Collapse in={open} timeout="auto" unmountOnExit>
+            <Box sx={{ margin: 1 }}>
+              <Typography variant="h6" gutterBottom component="div">
+                Resources
+              </Typography>
+              {loading ? (
+                <Typography>Loading resources...</Typography>
+              ) : resources.length > 0 ? (
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Title</TableCell>
+                      <TableCell>Uploaded</TableCell>
+                      <TableCell>Action</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {resources.map((resource) => (
+                      <TableRow key={resource.id}>
+                        <TableCell>{resource.title}</TableCell>
+                        <TableCell>
+                          {new Date(resource.uploaded_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            startIcon={<Download />}
+                            href={resource.file}
+                            download
+                            size="small"
+                            variant="contained"
+                            color="primary"
+                          >
+                            Download
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Typography>No resources available</Typography>
+              )}
+            </Box>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
 
 const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
   const [lessons, setLessons] = useState([]);
@@ -26,12 +129,12 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
       const fetchLessons = async () => {
         try {
           const lessonsData = await getLessonsForCourse(courseId);
-          console.log('Raw lessons data:', lessonsData);
+          console.log("Raw lessons data:", lessonsData);
           const normalizedLessons = lessonsData.map((lesson) => ({
             ...lesson,
             completed: Boolean(lesson.completed),
           }));
-          console.log('Normalized lessons:', normalizedLessons);
+          console.log("Normalized lessons:", normalizedLessons);
           setLessons(normalizedLessons);
         } catch (error) {
           console.error("Error fetching lessons:", error);
@@ -47,7 +150,7 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
 
   const handleLessonCompletion = async (lessonId, completed) => {
     try {
-      await updateLessonProgress(lessonId, completed);  
+      await updateLessonProgress(lessonId, completed);
       setLessons((prevLessons) =>
         prevLessons.map((lesson) =>
           lesson.lesson_id === lessonId ? { ...lesson, completed } : lesson
@@ -57,7 +160,7 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
       console.error("Error updating lesson progress:", error);
     }
   };
-  
+
   const styles = {
     header: {
       color: "green",
@@ -90,42 +193,19 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
             <Table>
               <TableHead>
                 <TableRow>
+                  <TableCell sx={styles.tableHeader} width="50px" />
                   <TableCell sx={styles.tableHeader}>Lesson Title</TableCell>
                   <TableCell sx={styles.tableHeader}>Description</TableCell>
-                  <TableCell sx={styles.tableHeader}>Attachment</TableCell>
                   <TableCell sx={styles.tableHeader}>Completed</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {lessons.map((lesson) => (
-                  <TableRow key={lesson.lesson_id}>
-                    <TableCell>{lesson.title}</TableCell>
-                    <TableCell>{lesson.description}</TableCell>
-                    <TableCell>
-                      {lesson.attachment ? (
-                        <a
-                          href={lesson.attachment}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          View Attachment
-                        </a>
-                      ) : (
-                        "No Attachment"
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Checkbox
-                        checked={lesson.completed} 
-                        onChange={(e) =>
-                          handleLessonCompletion(
-                            lesson.lesson_id,
-                            e.target.checked
-                          )
-                        }
-                      />
-                    </TableCell>
-                  </TableRow>
+                  <LessonRow
+                    key={lesson.lesson_id}
+                    lesson={lesson}
+                    onCompletionChange={handleLessonCompletion}
+                  />
                 ))}
               </TableBody>
             </Table>
