@@ -3,8 +3,8 @@ from django.contrib import admin
 from rest_framework.routers import DefaultRouter
 from content.views import (
     UserViewSet, 
-    CourseViewSet,  # Will need to be renamed to CourseViewSet
-    EventViewSet,   # Will need to be renamed to EventViewSet
+    CourseViewSet,  
+    EventViewSet,   
     UserEventsView,
     EventRegistrationView,
     RegisterView, 
@@ -31,7 +31,6 @@ from content.views import (
 from django.conf import settings
 from django.conf.urls.static import static
 
-# DRF Router for ViewSets
 router = DefaultRouter()
 router.register(r'users', UserViewSet, basename='user')
 router.register(r'courses', CourseViewSet, basename='course')
@@ -54,7 +53,7 @@ urlpatterns = [
     path('api/lessons/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
     path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
     path('api/courses/<int:course_id>/lessons/', CourseLessonsView.as_view(), name='course-lessons'),
-     path('api/lessons/<int:lesson_id>/resources/', LessonResourcesView.as_view(), name='lesson-resources'),
+    path('api/lessons/<int:lesson_id>/resources/', LessonResourcesView.as_view(), name='lesson-resources'),
     
     # Admin endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),
