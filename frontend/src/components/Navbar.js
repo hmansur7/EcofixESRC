@@ -2,13 +2,13 @@ import React from "react";
 import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/api"; 
-
+import { Logout } from "@mui/icons-material";
 const Navbar = ({ title, links }) => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
         logoutUser(); 
-        navigate("/login"); 
+        navigate("/"); 
     };
 
     return (
@@ -29,7 +29,17 @@ const Navbar = ({ title, links }) => {
                             {link.label}
                         </Button>
                     ))}
-                    <Button color="inherit" onClick={handleLogout} sx={{ margin: "0 0.5rem" }}>
+                    <Button 
+                        variant="contained" 
+                        onClick={handleLogout} 
+                        sx={{
+                            backgroundColor: "darkred",
+                            color: "white",
+                            "&:hover": { backgroundColor: "red" },
+                            fontWeight: "bold",
+                          }}
+                          startIcon={<Logout />}
+                    >
                         Logout
                     </Button>
                 </Box>

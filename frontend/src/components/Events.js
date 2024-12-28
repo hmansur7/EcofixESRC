@@ -160,15 +160,13 @@ const EventsPage = () => {
     return (
         <div style={styles.container}>
             <div style={styles.calendarAndEvents}>
-                {/* Calendar Component */}
                 <div style={styles.calendar}>
                     <Calendar
-                        onChange={setDate} // Updates the selected date
+                        onChange={setDate} 
                         value={date}
                     />
                 </div>
 
-                {/* Events on the selected date */}
                 <h2>Events on {date.toDateString()}:</h2>
                 {loading ? (
                     <p style={styles.loading}>Loading events...</p>
@@ -194,7 +192,6 @@ const EventsPage = () => {
                     <p>No events for this day.</p>
                 )}
 
-                {/* All Events */}
                 <h2>All Events:</h2>
                 {loading ? (
                     <p style={styles.loading}>Loading all events...</p>
@@ -221,7 +218,6 @@ const EventsPage = () => {
                 )}
             </div>
 
-            {/* Registered Events */}
             <div style={styles.registeredEvents}>
                 <h2>Your Registered Events:</h2>
                 {loading ? (

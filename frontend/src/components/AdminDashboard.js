@@ -54,7 +54,6 @@ const AdminDashboard = () => {
 
   const navigate = useNavigate();
 
-  // Fetch admin data
   const fetchData = async () => {
     try {
       const usersData = await getAdminUsers();
@@ -85,7 +84,6 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
-  // Add a new course
   const handleAddCourse = async () => {
     try {
       await addAdminCourse(newCourse);
@@ -96,7 +94,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Remove a course
   const handleRemoveCourse = async (courseId) => {
     try {
       await removeAdminCourse(courseId);
@@ -106,7 +103,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Add a new event
   const handleAddEvent = async () => {
     try {
       await addAdminEvent(newEvent);
@@ -117,7 +113,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Remove an event
   const handleRemoveEvent = async (eventId) => {
     try {
       await removeAdminEvent(eventId);
@@ -127,7 +122,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // View registered users for an event
   const handleViewRegisteredUsers = async (event) => {
     try {
       const response = await getEventRegistrations(event.event_id);
@@ -158,7 +152,7 @@ const AdminDashboard = () => {
 
   const styles = {
     header: {
-      color: "green",
+      color: "#14213d",
       fontWeight: "bold",
     },
     card: {
@@ -168,14 +162,14 @@ const AdminDashboard = () => {
       padding: "1rem",
     },
     tableHeader: {
-      backgroundColor: "green",
+      backgroundColor: "#14213d",
       color: "white",
       fontWeight: "bold",
     },
     button: {
-      backgroundColor: "green",
+      backgroundColor: "#14213d",
       color: "white",
-      "&:hover": { backgroundColor: "darkgreen" },
+      "&:hover": { backgroundColor: "#fca311" },
     },
   };
 
@@ -186,17 +180,20 @@ const AdminDashboard = () => {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          mb: 3,
+          backgroundColor: "#14213d",
+          padding: 3,
+          margin: -3,
+          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
         }}
       >
-        <Typography variant="h4" sx={styles.header}>
+        <Typography variant="h4" sx={{ color: "white" }}>
           Admin Dashboard
         </Typography>
         <Button
           variant="contained"
           onClick={() => {
             logoutUser();
-            navigate("/login");
+            navigate("/");
           }}
           sx={{
             backgroundColor: "darkred",
@@ -249,7 +246,6 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Course Management */}
       <Card sx={{ mb: 3, ...styles.card }}>
         <CardContent>
           <Typography variant="h5" sx={styles.header}>
@@ -298,11 +294,7 @@ const AdminDashboard = () => {
                       <Button
                         variant="outlined"
                         onClick={() => openLessonDialog(course)}
-                        sx={{
-                          textTransform: "none",
-                          marginRight: 2,
-                          backgroundColor: "lightblue",
-                        }}
+                        sx={{ ...styles.button, textTransform: "none" }}
                       >
                         Manage Lessons
                       </Button>
@@ -321,8 +313,6 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-     
-      {/* Lesson Management Dialog */}
       {selectedCourse && (
         <LessonManagement
           open={isLessonDialogOpen}
@@ -331,7 +321,6 @@ const AdminDashboard = () => {
         />
       )}
 
-      {/* Event Management */}
       <Card sx={styles.card}>
         <CardContent>
           <Typography variant="h5" sx={styles.header}>
@@ -422,11 +411,7 @@ const AdminDashboard = () => {
                     <TableCell>
                       <Button
                         variant="outlined"
-                        sx={{
-                          textTransform: "none",
-                          marginRight: 1,
-                          backgroundColor: "lightblue",
-                        }}
+                        sx={{ ...styles.button, textTransform: "none" }}
                         onClick={() => handleViewRegisteredUsers(event)}
                       >
                         View Users
@@ -446,7 +431,6 @@ const AdminDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* Registered Users Dialog */}
       <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>Registered Users</DialogTitle>
         <DialogContent>
