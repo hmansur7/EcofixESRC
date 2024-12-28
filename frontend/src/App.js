@@ -26,10 +26,8 @@ function App() {
   const Layout = ({ children }) => {
     const location = useLocation();
 
-    // Define routes where the navbar should be visible
     const validNavbarRoutes = ["/learning", "/events", "/progress"];
 
-    // Determine if the navbar should be shown
     const showNavbar = validNavbarRoutes.includes(location.pathname);
 
     return (

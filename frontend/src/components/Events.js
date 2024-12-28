@@ -114,7 +114,7 @@ const EventsPage = () => {
             alignItems: "center",
         },
         registerButton: {
-            backgroundColor: "#007bff",
+            backgroundColor: "#fca311",
             color: "white",
             border: "none",
             borderRadius: "4px",

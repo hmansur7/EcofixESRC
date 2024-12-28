@@ -46,7 +46,7 @@ const LearningDashboard = () => {
 
   const styles = {
     header: {
-      color: "green",
+      color: "#14213d",
       fontWeight: "bold",
     },
     card: {
@@ -56,7 +56,7 @@ const LearningDashboard = () => {
       padding: "1rem",
     },
     tableHeader: {
-      backgroundColor: "green",
+      backgroundColor: "#14213d",
       color: "white",
       fontWeight: "bold",
     },
@@ -91,9 +91,9 @@ const LearningDashboard = () => {
                         variant="contained"
                         onClick={() => handleViewCourse(course)}
                         sx={{
-                          backgroundColor: "green",
+                          backgroundColor: "#14213d",
                           color: "white",
-                          "&:hover": { backgroundColor: "darkgreen" },
+                          "&:hover": { backgroundColor: "#fca311" },
                         }}
                       >
                         View Course
@@ -107,7 +107,6 @@ const LearningDashboard = () => {
         </CardContent>
       </Card>
 
-      {/* View Course Modal */}
       {selectedCourse && (
         <ViewCourseModal
           open={modalOpen}

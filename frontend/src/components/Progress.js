@@ -51,7 +51,7 @@ const ProgressDashboard = () => {
 
   const styles = {
     header: {
-      color: "green",
+      color: "#14213d",
       fontWeight: "bold",
     },
     card: {
@@ -61,7 +61,7 @@ const ProgressDashboard = () => {
       padding: "1rem",
     },
     tableHeader: {
-      backgroundColor: "green",
+      backgroundColor: "#14213d",
       color: "white",
       fontWeight: "bold",
     },
@@ -114,7 +114,7 @@ const ProgressDashboard = () => {
                           <LinearProgress
                             variant="determinate"
                             value={progressData[course.course_id] || 0}
-                            sx={styles.progressBar}
+                            sx={styles.progressBar} 
                           />
                           <Typography sx={styles.progressLabel}>
                             {progressData[course.course_id]?.toFixed(2) || "0"}%

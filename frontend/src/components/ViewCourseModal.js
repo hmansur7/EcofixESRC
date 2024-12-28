@@ -96,6 +96,7 @@ const LessonRow = ({ lesson, onCompletionChange }) => {
                         <TableCell>
                           <Button
                             startIcon={<Download />}
+                            sx={{ backgroundColor: "#14213d", "&:hover": { backgroundColor: "#fca311" }}}
                             href={resource.file}
                             download
                             size="small"
@@ -163,11 +164,11 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
 
   const styles = {
     header: {
-      color: "green",
+      color: "#14213d",
       fontWeight: "bold",
     },
     tableHeader: {
-      backgroundColor: "green",
+      backgroundColor: "#14213d",
       color: "white",
       fontWeight: "bold",
     },
@@ -217,7 +218,14 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} sx={{ color: "red", fontWeight: "bold" }}>
+        <Button 
+          variant="contained" 
+          onClick={onClose}
+          sx={{
+            backgroundColor: "darkred",
+            color: "white",
+            "&:hover": { backgroundColor: "red" },
+          }}>
           Close
         </Button>
       </DialogActions>

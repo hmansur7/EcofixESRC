@@ -1,18 +1,18 @@
 import React from "react";
 import { AppBar, Toolbar, Typography, Button, Box } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { logoutUser } from "../services/api"; // Assuming logoutUser is defined in api.js
+import { logoutUser } from "../services/api"; 
 
 const Navbar = ({ title, links }) => {
     const navigate = useNavigate();
 
     const handleLogout = () => {
-        logoutUser(); // Remove the token
-        navigate("/login"); // Redirect to login page
+        logoutUser(); 
+        navigate("/login"); 
     };
 
     return (
-        <AppBar position="static" sx={{ backgroundColor: "green" }}>
+        <AppBar position="static" sx={{ backgroundColor: "#14213d" }}>
             <Toolbar>
                 <Typography variant="h6" sx={{ flexGrow: 1 }}>
                     {title}
