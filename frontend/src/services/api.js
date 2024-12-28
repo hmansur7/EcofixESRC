@@ -47,7 +47,7 @@ export const addAdminEvent = async (eventData) => {
 };
 
 export const removeAdminEvent = async (eventId) => {
-    const response = await API.delete(`admin/events/remove/${eventId}/`);
+    const response = await API.delete(`admin/events/${eventId}/remove/`);
     return response.data;
 };
 

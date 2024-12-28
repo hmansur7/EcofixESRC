@@ -15,7 +15,7 @@ import {
   Button,
   Checkbox,
 } from "@mui/material";
-import { getLessonsForCourse, updateLessonProgress } from "../services/api"; // API to fetch lessons and update progress
+import { getLessonsForCourse, updateLessonProgress } from "../services/api"; 
 
 const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
   const [lessons, setLessons] = useState([]);
@@ -47,7 +47,7 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
 
   const handleLessonCompletion = async (lessonId, completed) => {
     try {
-      await updateLessonProgress(lessonId, completed);  // Make sure this updates the backend correctly
+      await updateLessonProgress(lessonId, completed);  
       setLessons((prevLessons) =>
         prevLessons.map((lesson) =>
           lesson.lesson_id === lessonId ? { ...lesson, completed } : lesson
@@ -116,7 +116,7 @@ const ViewCourseModal = ({ open, onClose, courseId, courseTitle }) => {
                     </TableCell>
                     <TableCell>
                       <Checkbox
-                        checked={lesson.completed} // Ensure the checkbox reflects the 'completed' status
+                        checked={lesson.completed} 
                         onChange={(e) =>
                           handleLessonCompletion(
                             lesson.lesson_id,

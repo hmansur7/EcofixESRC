@@ -236,7 +236,7 @@ class AdminAddEventView(CreateAPIView):
 class AdminRemoveEventView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Event.objects.all()
-    lookup_field = 'id'
+    lookup_field = 'event_id'
 
 class AdminEventRegistrationsView(APIView):
     permission_classes = [IsAdmin]
