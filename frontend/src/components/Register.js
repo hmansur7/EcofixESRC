@@ -16,7 +16,7 @@ import { PersonAdd } from "@mui/icons-material";
 const Register = () => {
   const [formData, setFormData] = useState({ name: "", email: "", password: "" });
   const [error, setError] = useState("");
-  const navigate = useNavigate(); // Initialize navigate
+  const navigate = useNavigate(); 
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -31,7 +31,7 @@ const Register = () => {
         formData.password
       );
       localStorage.setItem("authToken", response.token); 
-      navigate("/learning"); // Redirect to LearningDashboard on success
+      navigate("/learning"); 
     } catch (error) {
       setError(error.message);
     }
@@ -48,8 +48,8 @@ const Register = () => {
           alignItems: "center",
         }}
       >
-        <PersonAdd sx={{ fontSize: 50, color: "green" }} />
-        <Typography component="h1" variant="h5" sx={{ mt: 1, fontWeight: "bold" }}>
+        <PersonAdd sx={{ fontSize: 50, color: "#14213d" }} />
+        <Typography component="h1" variant="h5" sx={{ mt: 1, fontWeight: "bold", color: "#14213d" }}>
           Register
         </Typography>
         <Box
@@ -106,8 +106,8 @@ const Register = () => {
             sx={{
               mt: 2,
               mb: 2,
-              backgroundColor: "green",
-              "&:hover": { backgroundColor: "darkgreen" },
+              backgroundColor: "#14213d",
+              "&:hover": { backgroundColor: "#fca311" },
             }}
           >
             Register
@@ -123,7 +123,7 @@ const Register = () => {
               component="button"
               onClick={() => navigate("/login")}
               underline="none"
-              sx={{ color: "green", fontWeight: "bold" }}
+              sx={{ color: "#fca311", fontWeight: "bold" }}
             >
               Login here
             </Link>

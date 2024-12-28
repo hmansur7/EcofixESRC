@@ -50,14 +50,13 @@ const Login = () => {
           alignItems: "center",
         }}
       >
-        <LockOutlined sx={{ fontSize: 50, color: "green" }} />
-        <Typography component="h1" variant="h5" sx={{ mt: 1, fontWeight: "bold" }}>
+        <LockOutlined sx={{ fontSize: 50, color: "#14213d" }} />
+        <Typography component="h1" variant="h5" sx={{ mt: 1, fontWeight: "bold", color: "#14213d" }}>
           Login
         </Typography>
         <Box
           component="form"
           onSubmit={handleSubmit}
-          noValidate
           sx={{
             mt: 3,
             backgroundColor: "#f5f5f5",
@@ -100,8 +99,8 @@ const Login = () => {
             sx={{
               mt: 2,
               mb: 2,
-              backgroundColor: "green",
-              "&:hover": { backgroundColor: "darkgreen" },
+              backgroundColor: "#14213d",
+              "&:hover": { backgroundColor: "#fca311" },
             }}
           >
             {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Login"}
@@ -117,7 +116,7 @@ const Login = () => {
               component="button"
               onClick={() => navigate("/register")}
               underline="none"
-              sx={{ color: "green", fontWeight: "bold" }}
+              sx={{ color: "#fca311", fontWeight: "bold" }}
             >
               Register here
             </Link>
