@@ -23,7 +23,6 @@ const Login = () => {
   const [isValid, setIsValid] = useState(false);
   const navigate = useNavigate();
 
-  // Validation rules
   const validationRules = {
     email: {
       required: "Email is required",
@@ -38,7 +37,6 @@ const Login = () => {
     }
   };
 
-  // Validate a single field
   const validateField = (name, value) => {
     const rules = validationRules[name];
     if (!rules) return "";
@@ -58,7 +56,6 @@ const Login = () => {
     return "";
   };
 
-  // Validate all fields
   const validateForm = () => {
     const newErrors = {};
     Object.keys(formData).forEach(field => {
@@ -69,7 +66,6 @@ const Login = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Update form validity whenever formData or errors change
   useEffect(() => {
     const formIsValid = Object.keys(formData).every(
       field => formData[field].trim().length > 0 && !errors[field]
@@ -80,9 +76,8 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    setApiError(""); // Clear API error when user starts typing
+    setApiError(""); 
     
-    // Validate field on change if it's been touched
     if (touched[name]) {
       const error = validateField(name, value);
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -100,7 +95,6 @@ const Login = () => {
     e.preventDefault();
     setApiError("");
     
-    // Mark all fields as touched
     const touchedFields = Object.keys(formData).reduce(
       (acc, field) => ({ ...acc, [field]: true }), {}
     );
