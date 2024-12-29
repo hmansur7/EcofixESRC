@@ -29,7 +29,8 @@ from content.views import (
     AddLessonResourceView,
     DeleteLessonResourceView,
     VerifyEmailView,
-    ResendVerificationView
+    ResendVerificationView,
+    ChangePasswordView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -48,7 +49,8 @@ urlpatterns = [
     path('api/auth/login/', LoginView.as_view(), name='login'),
     path('api/auth/verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     path('api/auth/resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
-    
+    path('api/auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
+
     # Event endpoints
     path('api/events/<int:event_id>/register/', EventRegistrationView.as_view(), name='register-for-event'),
     path('api/events/registered/', UserRegisteredEventsListView.as_view(), name='registered-events-list'),

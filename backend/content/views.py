@@ -38,6 +38,7 @@ from .permissions import IsAdmin
 from django.core.mail import send_mail
 from django.conf import settings
 from django.core.validators import validate_email
+from django.contrib.auth.password_validation import validate_password
 import re
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -235,6 +236,78 @@ class ResendVerificationView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        # Get current and new password from request
+        current_password = request.data.get('current_password')
+        new_password = request.data.get('new_password')
+
+        # Validate input
+        if not all([current_password, new_password]):
+            return Response(
+                {"error": "Both current and new password are required."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        user = request.user
+
+        # Verify current password
+        if not user.check_password(current_password):
+            return Response(
+                {"error": "Current password is incorrect."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Validate new password
+        try:
+            # Use Django's password validation
+            validate_password(new_password, user)
+            
+            # Additional custom validation
+            if len(new_password) < 8:
+                raise ValidationError("Password must be at least 8 characters long.")
+            
+            if not any(c.isupper() for c in new_password):
+                raise ValidationError("Password must contain at least one uppercase letter.")
+            
+            if not any(c.islower() for c in new_password):
+                raise ValidationError("Password must contain at least one lowercase letter.")
+            
+            if not any(c.isdigit() for c in new_password):
+                raise ValidationError("Password must contain at least one number.")
+            
+            if not any(not c.isalnum() for c in new_password):
+                raise ValidationError("Password must contain at least one special character.")
+
+            # Check if new password is same as current
+            if current_password == new_password:
+                return Response(
+                    {"error": "New password must be different from current password."}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Set new password
+            user.set_password(new_password)
+            user.save()
+
+            return Response(
+                {"message": "Password changed successfully."}, 
+                status=status.HTTP_200_OK
+            )
+
+        except ValidationError as e:
+            return Response(
+                {"error": str(e) if hasattr(e, 'message') else e.messages[0]}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {"error": "An unexpected error occurred. Please try again."}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+                
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -265,9 +338,12 @@ class LoginView(APIView):
                 }, status=status.HTTP_403_FORBIDDEN)
 
             token, _ = Token.objects.get_or_create(user=user)
+
             return Response({
                 "token": token.key,
-                "role": user.role
+                "role": user.role,
+                "name": user.name,  
+                "email": user.email  
             }, status=status.HTTP_200_OK)
 
         except AppUser.DoesNotExist:

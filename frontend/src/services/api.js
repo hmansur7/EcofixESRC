@@ -16,19 +16,19 @@ API.interceptors.request.use((config) => {
 export const loginUser = async (email, password) => {
     try {
         const response = await API.post("auth/login/", { email, password });
+
         if (response.data.token) {
+            localStorage.setItem("userName", response.data.name);
+            localStorage.setItem("userEmail", response.data.email);
             localStorage.setItem("authToken", response.data.token);
             localStorage.setItem("userRole", response.data.role);
         }
         return response.data;
     } catch (error) {
-        if (error.response) {
-            throw new Error(error.response.data.error || "Login failed.");
-        } else if (error.request) {
-            throw new Error("Unable to reach server. Please check your internet connection.");
-        } else {
-            throw new Error("An unexpected error occurred. Please try again.");
+        if (error.response?.data?.error) {
+            throw new Error(error.response.data.error);
         }
+        throw new Error('Login failed');
     }
 };
 
@@ -53,6 +53,14 @@ export const resendVerificationEmail = async (email) => {
 
 export const checkEmailVerification = async (email) => {
     const response = await API.get(`auth/verification-status/${email}/`);
+    return response.data;
+};
+
+export const changePassword = async (currentPassword, newPassword) => {
+    const response = await API.post("auth/change-password/", {
+        current_password: currentPassword,
+        new_password: newPassword
+    });
     return response.data;
 };
 
