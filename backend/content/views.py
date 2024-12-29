@@ -89,7 +89,7 @@ class RegisterView(APIView):
         return password
 
     def validate_email_domain(self, email):
-        allowed_domains = ['torontomu.ca', 'gmail.com', 'outlook.com']  # Add your allowed domains
+        allowed_domains = ['torontomu.ca', 'gmail.com', 'outlook.com']  # Add allowed domains
         domain = email.split('@')[1].lower()
         if domain not in allowed_domains:
             raise ValidationError(f"Please use an email address from one of these domains: {', '.join(allowed_domains)}")
@@ -240,11 +240,9 @@ class ChangePasswordView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        # Get current and new password from request
         current_password = request.data.get('current_password')
         new_password = request.data.get('new_password')
 
-        # Validate input
         if not all([current_password, new_password]):
             return Response(
                 {"error": "Both current and new password are required."}, 
@@ -260,12 +258,9 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Validate new password
         try:
-            # Use Django's password validation
             validate_password(new_password, user)
             
-            # Additional custom validation
             if len(new_password) < 8:
                 raise ValidationError("Password must be at least 8 characters long.")
             
@@ -281,14 +276,12 @@ class ChangePasswordView(APIView):
             if not any(not c.isalnum() for c in new_password):
                 raise ValidationError("Password must contain at least one special character.")
 
-            # Check if new password is same as current
             if current_password == new_password:
                 return Response(
                     {"error": "New password must be different from current password."}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Set new password
             user.set_password(new_password)
             user.save()
 
