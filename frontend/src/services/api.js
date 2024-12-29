@@ -1,5 +1,6 @@
 import axios from "axios";
 
+
 const API = axios.create({
     baseURL: "http://127.0.0.1:8000/api/",
 });
@@ -13,24 +14,53 @@ API.interceptors.request.use((config) => {
 });
 
 export const loginUser = async (email, password) => {
-    const response = await API.post("auth/login/", { email, password });
-    localStorage.setItem("authToken", response.data.token);
-    localStorage.setItem("userRole", response.data.role); 
-    return response.data; 
+    try {
+        const response = await API.post("auth/login/", { email, password });
+        if (response.data.token) {
+            localStorage.setItem("authToken", response.data.token);
+            localStorage.setItem("userRole", response.data.role);
+        }
+        return response.data;
+    } catch (error) {
+        if (error.response) {
+            throw new Error(error.response.data.error || "Login failed.");
+        } else if (error.request) {
+            throw new Error("Unable to reach server. Please check your internet connection.");
+        } else {
+            throw new Error("An unexpected error occurred. Please try again.");
+        }
+    }
 };
 
 export const registerUser = async (name, email, password) => {
     const response = await API.post("auth/register/", { name, email, password });
-    localStorage.setItem("authToken", response.data.token);
-    localStorage.setItem("userRole", "user");
-    return response.data; 
+    return response.data;
+};
+
+export const verifyEmail = async (token) => {
+    const response = await API.post("auth/verify-email/", { token });
+    if (response.data.token) {
+        localStorage.setItem("authToken", response.data.token);
+        localStorage.setItem("userRole", response.data.role);
+    }
+    return response.data;
+};
+
+export const resendVerificationEmail = async (email) => {
+    const response = await API.post("auth/resend-verification/", { email });
+    return response.data;
+};
+
+export const checkEmailVerification = async (email) => {
+    const response = await API.get(`auth/verification-status/${email}/`);
+    return response.data;
 };
 
 export const logoutUser = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("pendingVerification");
 };
-
 export const getEvents = async () => {
     const response = await API.get("events/");
     return response.data;

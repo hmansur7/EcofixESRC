@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { loginUser } from "../services/api";
 import {
@@ -16,26 +16,120 @@ import { LockOutlined } from "@mui/icons-material";
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
-  const [error, setError] = useState("");
+  const [errors, setErrors] = useState({});
+  const [touched, setTouched] = useState({});
+  const [apiError, setApiError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [isValid, setIsValid] = useState(false);
   const navigate = useNavigate();
 
+  // Validation rules
+  const validationRules = {
+    email: {
+      required: "Email is required",
+      pattern: {
+        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+        message: "Invalid email address"
+      }
+    },
+    password: {
+      required: "Password is required",
+      minLength: { value: 8, message: "Password must be at least 8 characters" }
+    }
+  };
+
+  // Validate a single field
+  const validateField = (name, value) => {
+    const rules = validationRules[name];
+    if (!rules) return "";
+
+    if (rules.required && !value.trim()) {
+      return rules.required;
+    }
+
+    if (rules.minLength && value.length < rules.minLength.value) {
+      return rules.minLength.message;
+    }
+
+    if (rules.pattern && !rules.pattern.value.test(value)) {
+      return rules.pattern.message;
+    }
+
+    return "";
+  };
+
+  // Validate all fields
+  const validateForm = () => {
+    const newErrors = {};
+    Object.keys(formData).forEach(field => {
+      const error = validateField(field, formData[field]);
+      if (error) newErrors[field] = error;
+    });
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Update form validity whenever formData or errors change
+  useEffect(() => {
+    const formIsValid = Object.keys(formData).every(
+      field => formData[field].trim().length > 0 && !errors[field]
+    );
+    setIsValid(formIsValid);
+  }, [formData, errors]);
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setApiError(""); // Clear API error when user starts typing
+    
+    // Validate field on change if it's been touched
+    if (touched[name]) {
+      const error = validateField(name, value);
+      setErrors(prev => ({ ...prev, [name]: error }));
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name } = e.target;
+    setTouched(prev => ({ ...prev, [name]: true }));
+    const error = validateField(name, formData[name]);
+    setErrors(prev => ({ ...prev, [name]: error }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
+    
+    // Mark all fields as touched
+    const touchedFields = Object.keys(formData).reduce(
+      (acc, field) => ({ ...acc, [field]: true }), {}
+    );
+    setTouched(touchedFields);
+
+    if (!validateForm()) {
+      return;
+    }
+
     try {
-        const response = await loginUser(formData.email, formData.password);
-        const role = response.role;
-        if (role === "admin") {
-            navigate("/admin/dashboard");
-        } else {
-            navigate("/learning");
-        }
+      setLoading(true);
+      const response = await loginUser(formData.email, formData.password);
+      const role = response.role;
+      
+      if (role === "admin") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/learning");
+      }
     } catch (error) {
-        setError(error.message);
+      if (error.needsVerification) {
+        navigate("/verify-email", { 
+          state: { email: formData.email }
+        });
+      } else {
+        setApiError(error.message || "Login failed. Please check your credentials.");
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -57,6 +151,7 @@ const Login = () => {
         <Box
           component="form"
           onSubmit={handleSubmit}
+          noValidate
           sx={{
             mt: 3,
             backgroundColor: "#f5f5f5",
@@ -77,6 +172,10 @@ const Login = () => {
             autoFocus
             value={formData.email}
             onChange={handleChange}
+            onBlur={handleBlur}
+            error={touched.email && Boolean(errors.email)}
+            helperText={touched.email && errors.email}
+            disabled={loading}
           />
           <TextField
             variant="outlined"
@@ -90,33 +189,39 @@ const Login = () => {
             autoComplete="current-password"
             value={formData.password}
             onChange={handleChange}
+            onBlur={handleBlur}
+            error={touched.password && Boolean(errors.password)}
+            helperText={touched.password && errors.password}
+            disabled={loading}
           />
           <Button
             type="submit"
             fullWidth
             variant="contained"
-            disabled={loading}
+            disabled={loading || !isValid}
             sx={{
               mt: 2,
               mb: 2,
               backgroundColor: "#14213d",
               "&:hover": { backgroundColor: "#fca311" },
+              "&:disabled": { backgroundColor: "#cccccc" }
             }}
           >
             {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Login"}
           </Button>
-          {error && (
+          {apiError && (
             <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
+              {apiError}
             </Alert>
           )}
           <Typography align="center" sx={{ mt: 2 }}>
-            Don’t have an account?{" "}
+            Don't have an account?{" "}
             <Link
               component="button"
               onClick={() => navigate("/register")}
               underline="none"
               sx={{ color: "#fca311", fontWeight: "bold" }}
+              disabled={loading}
             >
               Register here
             </Link>

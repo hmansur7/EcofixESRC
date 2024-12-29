@@ -1,3 +1,4 @@
+# serializers.py
 from rest_framework import serializers
 from .models import (
     CourseProgress,
@@ -26,6 +27,12 @@ class UserSerializer(serializers.ModelSerializer):
             name=validated_data['name'],
             password=validated_data['password'],
         )
+    
+class EmailVerificationSerializer(serializers.Serializer):
+    token = serializers.UUIDField()
+
+class ResendVerificationSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
 class CourseSerializer(serializers.ModelSerializer):  
     class Meta:

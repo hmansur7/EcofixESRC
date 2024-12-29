@@ -13,8 +13,9 @@ import Login from "./components/Login";
 import Register from "./components/Register";
 import NotFound from "./components/Notfound";
 import PrivateRoute from "./middleware/Private";
-import AdminRoute from "./middleware/Admin"; // Import the AdminRoute middleware
-import AdminDashboard from "./components/AdminDashboard"; // Import the AdminDashboard
+import AdminRoute from "./middleware/Admin"; 
+import AdminDashboard from "./components/AdminDashboard";
+import VerifyEmail from "./components/VerifyEmail";  // Import the new component
 
 function App() {
   const navbarLinks = [
@@ -46,6 +47,10 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          
+          {/* Verification Routes */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
           {/* User Private Routes */}
           <Route

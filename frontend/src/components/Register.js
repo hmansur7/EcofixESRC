@@ -1,3 +1,4 @@
+// Register.js
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { registerUser } from "../services/api";
@@ -19,9 +20,9 @@ const Register = () => {
   const [touched, setTouched] = useState({});
   const [apiError, setApiError] = useState("");
   const [isValid, setIsValid] = useState(false);
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
   const navigate = useNavigate();
 
-  // Validation rules
   const validationRules = {
     name: {
       required: "Name is required",
@@ -49,7 +50,6 @@ const Register = () => {
     }
   };
 
-  // Validate a single field
   const validateField = (name, value) => {
     const rules = validationRules[name];
     if (!rules) return "";
@@ -73,7 +73,6 @@ const Register = () => {
     return "";
   };
 
-  // Validate all fields
   const validateForm = () => {
     const newErrors = {};
     Object.keys(formData).forEach(field => {
@@ -84,7 +83,6 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Update form validity whenever formData or errors change
   useEffect(() => {
     const formIsValid = Object.keys(formData).every(
       field => formData[field].length > 0 && !errors[field]
@@ -96,7 +94,6 @@ const Register = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     
-    // Validate field on change if it's been touched
     if (touched[name]) {
       const error = validateField(name, value);
       setErrors(prev => ({ ...prev, [name]: error }));
@@ -113,7 +110,6 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Mark all fields as touched
     const touchedFields = Object.keys(formData).reduce(
       (acc, field) => ({ ...acc, [field]: true }), {}
     );
@@ -129,12 +125,77 @@ const Register = () => {
         formData.email,
         formData.password
       );
-      localStorage.setItem("authToken", response.token);
-      navigate("/learning");
+      
+      // Store email for verification
+      localStorage.setItem("pendingVerification", formData.email);
+      setRegistrationSuccess(true);
+      
+      // Navigate to verification page after a brief delay to show success message
+      setTimeout(() => {
+        navigate("/verify-email", { 
+          state: { email: formData.email }
+        });
+      }, 2000);
+      
     } catch (error) {
-      setApiError(error.message);
+      setApiError(error.response?.data?.error || "Registration failed");
     }
   };
+
+  if (registrationSuccess) {
+    return (
+      <Container component="main" maxWidth="xs">
+        <Box
+          sx={{
+            marginTop: 8,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <PersonAdd sx={{ fontSize: 50, color: "#14213d" }} />
+          <Typography 
+            component="h1" 
+            variant="h5" 
+            sx={{ 
+              mt: 1, 
+              mb: 3,
+              fontWeight: "bold", 
+              color: "#14213d",
+              textAlign: "center"
+            }}
+          >
+            Registration Successful!
+          </Typography>
+          <Box
+            sx={{
+              backgroundColor: "#f5f5f5",
+              padding: 3,
+              borderRadius: 2,
+              boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+              width: "100%",
+            }}
+          >
+            <Alert 
+              severity="success" 
+              sx={{ 
+                mb: 2,
+                '& .MuiAlert-message': {
+                  width: '100%',
+                  textAlign: 'center'
+                }
+              }}
+            >
+              Account created successfully!
+            </Alert>
+            <Typography align="center" sx={{ mb: 2 }}>
+              Please check your email to verify your account. Redirecting to verification page...
+            </Typography>
+          </Box>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container component="main" maxWidth="xs">

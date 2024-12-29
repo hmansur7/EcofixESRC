@@ -195,11 +195,11 @@ const LessonManagement = ({ open, onClose, course }) => {
               onChange={(e) => {
                 const value = parseInt(e.target.value);
                 if (value < 1) {
-                  return; // Prevent negative numbers
+                  return; 
                 }
                 setNewLesson({ ...newLesson, order: value });
               }}
-              inputProps={{ min: "1" }} // Prevents negative numbers in number input
+              inputProps={{ min: "1" }} 
               helperText="Order must be a positive number"
               sx={{ mt: 2 }}
             />

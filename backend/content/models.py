@@ -1,9 +1,12 @@
+# models.py 
 import os
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
+from django.utils import timezone
+import uuid
 
 USER_ROLES = [
     ('user', 'User'),
@@ -39,6 +42,7 @@ class UserManager(models.Manager):
     def get_by_natural_key(self, username):
         return self.get(**{self.model.USERNAME_FIELD: username})
     
+
 class AppUser(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255, null=False, blank=False)
     email = models.EmailField(unique=True, null=False, blank=False)
@@ -48,7 +52,8 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['name']
-
+    is_verified = models.BooleanField(default=False)
+    
     class Meta:
         db_table = 'content_appuser'
         verbose_name = 'user'
@@ -56,6 +61,21 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
     
     def __str__(self):
         return self.email
+
+class EmailVerificationToken(models.Model):
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE)
+    token = models.UUIDField(default=uuid.uuid4, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    is_used = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        if not self.expires_at:
+            self.expires_at = timezone.now() + timezone.timedelta(hours=24)
+        super().save(*args, **kwargs)
+
+    def is_valid(self):
+        return not self.is_used and timezone.now() <= self.expires_at
     
 class Course(models.Model):
     course_id = models.AutoField(primary_key=True, null=False, blank=False)
