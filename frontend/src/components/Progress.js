@@ -12,13 +12,22 @@ import {
   TableRow,
   Paper,
   LinearProgress,
+  TextField,
+  InputAdornment,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
+import { Search } from "@mui/icons-material";
 import { getCourses, getCourseProgress } from "../services/api";
 
 const ProgressDashboard = () => {
   const [courses, setCourses] = useState([]);
   const [progressData, setProgressData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [progressFilter, setProgressFilter] = useState("all");
 
   const fetchProgressData = async () => {
     try {
@@ -31,7 +40,10 @@ const ProgressDashboard = () => {
           const progress = await getCourseProgress(course.course_id);
           progressMap[course.course_id] = progress.progress_percentage;
         } catch (error) {
-          console.error(`Error fetching progress for course ${course.course_id}:`, error);
+          console.error(
+            `Error fetching progress for course ${course.course_id}:`,
+            error
+          );
           progressMap[course.course_id] = 0; // Default to 0 if error occurs
         }
       });
@@ -48,6 +60,30 @@ const ProgressDashboard = () => {
   useEffect(() => {
     fetchProgressData();
   }, []);
+
+  const filteredCourses = courses.filter((course) => {
+    const matchesSearch = course.title
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
+    const progress = progressData[course.course_id] || 0;
+
+    let matchesProgress = true;
+    switch (progressFilter) {
+      case "notStarted":
+        matchesProgress = progress === 0;
+        break;
+      case "inProgress":
+        matchesProgress = progress > 0 && progress < 100;
+        break;
+      case "completed":
+        matchesProgress = progress === 100;
+        break;
+      default:
+        matchesProgress = true;
+    }
+
+    return matchesSearch && matchesProgress;
+  });
 
   const styles = {
     header: {
@@ -82,6 +118,44 @@ const ProgressDashboard = () => {
       fontSize: "1.2rem",
       color: "#888",
     },
+    filterContainer: {
+      display: "flex",
+      gap: 2,
+      marginBottom: 2,
+      alignItems: "center",
+    },
+    searchField: {
+      flex: 1,
+      backgroundColor: "white",
+      borderRadius: "4px",
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+          borderColor: "#14213d",
+        },
+        "&:hover fieldset": {
+          borderColor: "#fca311",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: "#14213d",
+        },
+      },
+    },
+    select: {
+      minWidth: 200,
+      backgroundColor: "white",
+      borderRadius: "4px",
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+          borderColor: "#14213d",
+        },
+        "&:hover fieldset": {
+          borderColor: "#fca311",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: "#14213d",
+        },
+      },
+    },
   };
 
   return (
@@ -94,9 +168,37 @@ const ProgressDashboard = () => {
       ) : (
         <Card sx={styles.card}>
           <CardContent>
-            <Typography variant="h5" sx={styles.header}>
-              Your Courses Progress
-            </Typography>
+            <Box sx={styles.filterContainer}>
+              <TextField
+                placeholder="Search courses..."
+                variant="outlined"
+                size="small"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={styles.searchField}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl size="small" sx={styles.select}>
+                <InputLabel>Progress Filter</InputLabel>
+                <Select
+                  value={progressFilter}
+                  label="Progress Filter"
+                  onChange={(e) => setProgressFilter(e.target.value)}
+                >
+                  <MenuItem value="all">All Progress</MenuItem>
+                  <MenuItem value="notStarted">Not Started (0%)</MenuItem>
+                  <MenuItem value="inProgress">In Progress (1-99%)</MenuItem>
+                  <MenuItem value="completed">Completed (100%)</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+
             <TableContainer component={Paper} sx={{ mt: 2 }}>
               <Table>
                 <TableHead>
@@ -106,23 +208,39 @@ const ProgressDashboard = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {courses.map((course) => (
-                    <TableRow key={course.course_id}>
-                      <TableCell>{course.title}</TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                          <LinearProgress
-                            variant="determinate"
-                            value={progressData[course.course_id] || 0}
-                            sx={styles.progressBar} 
-                          />
-                          <Typography sx={styles.progressLabel}>
-                            {progressData[course.course_id]?.toFixed(2) || "0"}%
-                          </Typography>
-                        </Box>
+                  {filteredCourses.length > 0 ? (
+                    filteredCourses.map((course) => (
+                      <TableRow key={course.course_id}>
+                        <TableCell>{course.title}</TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 1,
+                            }}
+                          >
+                            <LinearProgress
+                              variant="determinate"
+                              value={progressData[course.course_id] || 0}
+                              sx={styles.progressBar}
+                            />
+                            <Typography sx={styles.progressLabel}>
+                              {progressData[course.course_id]?.toFixed(2) ||
+                                "0"}
+                              %
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={2} align="center">
+                        No courses found matching your criteria.
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </TableContainer>
