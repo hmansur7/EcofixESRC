@@ -267,7 +267,6 @@ const EventsPage = () => {
           </CardContent>
         </Card>
 
-        {/* All Events section */}
         <Card sx={styles.card}>
           <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
             <Typography variant={isMobile ? "h6" : "h5"} sx={styles.header}>

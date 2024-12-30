@@ -61,7 +61,7 @@ const ProgressDashboard = () => {
             `Error fetching progress for course ${course.course_id}:`,
             error
           );
-          progressMap[course.course_id] = 0; // Default to 0 if error occurs
+          progressMap[course.course_id] = 0; 
         }
       });
 

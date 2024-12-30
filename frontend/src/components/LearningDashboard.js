@@ -210,7 +210,6 @@ const LearningDashboard = () => {
             <Box>
               {filteredCourses.length > 0 ? (
                 <>
-                  {/* Mobile Cards with Pagination */}
                   {filteredCourses
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((course) => (
