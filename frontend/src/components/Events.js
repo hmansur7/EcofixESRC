@@ -10,11 +10,18 @@ import {
   Select,
   MenuItem,
   Typography,
-  Paper,
+  Card,
+  CardContent,
+  InputLabel,
+  useTheme,
+  useMediaQuery,
+  Container,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 
 const EventsPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [date, setDate] = useState(new Date());
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -70,84 +77,49 @@ const EventsPage = () => {
 
   const styles = {
     container: {
-      display: "flex",
-      justifyContent: "space-between",
-      padding: "20px",
+      padding: {
+        xs: "10px",
+        sm: "15px",
+        md: "20px"
+      },
       fontFamily: "Arial, sans-serif",
     },
     calendarAndEvents: {
-      flex: 2,
       display: "flex",
       flexDirection: "column",
-      justifyContent: "space-between",
+      gap: { xs: 2, sm: 3 },
     },
     calendar: {
-      marginBottom: "20px",
       margin: "0 auto",
-    },
-    eventsList: {
-      listStyleType: "none",
-      padding: 0,
-    },
-    eventItem: {
-      padding: "10px",
-      border: "1px solid #ddd",
-      marginBottom: "10px",
-      borderRadius: "5px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    loading: {
-      textAlign: "center",
-      fontSize: "16px",
-      color: "#888",
-    },
-    errorMessage: {
-      color: "red",
-      textAlign: "center",
-      marginTop: "20px",
-    },
-    registeredEvents: {
-      marginTop: "20px",
-      paddingLeft: "20px",
-      borderTop: "1px solid #ddd",
-      paddingTop: "20px",
-    },
-    registeredEventItem: {
-      padding: "10px",
-      border: "1px solid #ddd",
-      marginBottom: "10px",
-      borderRadius: "5px",
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    filterContainer: {
-      marginBottom: 20,
-      padding: 20,
-      backgroundColor: "#f5f5f5",
-      borderRadius: 8,
-      boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-    },
-    searchField: {
-        flex: 1,
-        backgroundColor: "white",
-        borderRadius: "4px",
-        "& .MuiOutlinedInput-root": {
-          "& fieldset": {
-            borderColor: "#14213d",
-          },
-          "&:hover fieldset": {
-            borderColor: "#fca311",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "#14213d",
+      maxWidth: "100%",
+      overflow: "auto",
+      "& .react-calendar": {
+        width: "100%",
+        maxWidth: { xs: "100%", sm: "600px" },
+        margin: "0 auto",
+        border: "1px solid #ddd",
+        borderRadius: "8px",
+        padding: { xs: "0.5rem", sm: "1rem" },
+        "& button": {
+          padding: { xs: "0.5rem", sm: "0.75rem" },
+          fontSize: { xs: "0.875rem", sm: "1rem" },
+        },
+        "& .react-calendar__tile--active": {
+          backgroundColor: "#14213d",
+          "&:hover": {
+            backgroundColor: "#fca311",
           },
         },
+      },
     },
-    select: {
-      minWidth: 200,
+    filterBox: {
+      display: "flex",
+      flexDirection: { xs: "column", sm: "row" },
+      alignItems: { xs: "stretch", sm: "center" },
+      gap: 2,
+    },
+    searchField: {
+      flex: { sm: 1 },
       backgroundColor: "white",
       borderRadius: "4px",
       "& .MuiOutlinedInput-root": {
@@ -162,91 +134,182 @@ const EventsPage = () => {
         },
       },
     },
+    select: {
+      width: { xs: "100%", sm: 200 },
+      backgroundColor: "white",
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+          borderColor: "#14213d",
+        },
+        "&:hover fieldset": {
+          borderColor: "#fca311",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: "#14213d",
+        },
+      },
+    },
+    card: {
+      backgroundColor: "#f5f5f5",
+      borderRadius: "8px",
+      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+      padding: { xs: "0.5rem", sm: "1rem" },
+      marginBottom: { xs: "15px", sm: "20px" },
+    },
+    eventsList: {
+      listStyleType: "none",
+      padding: 0,
+      display: "flex",
+      flexDirection: "column",
+      gap: { xs: 1, sm: 2 },
+    },
+    eventItem: {
+      padding: { xs: "8px", sm: "10px" },
+      border: "1px solid #ddd",
+      borderRadius: "5px",
+      backgroundColor: "white",
+      "& span": {
+        fontSize: { xs: "0.875rem", sm: "1rem" },
+      },
+    },
+    header: {
+      color: "#14213d",
+      fontWeight: "bold",
+      fontSize: { xs: "1.25rem", sm: "1.5rem" },
+      marginBottom: { xs: 1, sm: 2 },
+    },
+    loading: {
+      textAlign: "center",
+      fontSize: { xs: "0.875rem", sm: "1rem" },
+      color: "#888",
+      py: 2,
+    },
+    errorMessage: {
+      color: "error.main",
+      textAlign: "center",
+      marginTop: { xs: 2, sm: 3 },
+      fontSize: { xs: "0.875rem", sm: "1rem" },
+    },
   };
 
   return (
-    <div style={styles.container}>
-      <div style={styles.calendarAndEvents}>
-        <Paper elevation={3} style={styles.filterContainer}>
-          <Box display="flex" alignItems="center" gap={2}>
-            <TextField
-              placeholder="Search events..."
-              variant="outlined"
-              size="small"
-              fullWidth
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={styles.searchField}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <FormControl size="small" style={styles.select}>
-              <Select
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
-              >
-                <MenuItem value="all">All Events</MenuItem>
-                <MenuItem value="upcoming">Upcoming</MenuItem>
-                <MenuItem value="past">Past</MenuItem>
-              </Select>
-            </FormControl>
-          </Box>
-        </Paper>
+    <Container maxWidth="lg" sx={styles.container}>
+      <Box sx={styles.calendarAndEvents}>
+        <Card sx={styles.card}>
+          <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+            <Typography variant={isMobile ? "h6" : "h5"} sx={styles.header}>
+              Filter Events
+            </Typography>
+            <Box sx={styles.filterBox}>
+              <TextField
+                placeholder="Search events..."
+                variant="outlined"
+                size={isMobile ? "small" : "medium"}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={styles.searchField}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              <FormControl size={isMobile ? "small" : "medium"} sx={styles.select}>
+                <InputLabel>Event Filter</InputLabel>
+                <Select
+                  value={filterType}
+                  label="Event Filter"
+                  onChange={(e) => setFilterType(e.target.value)}
+                >
+                  <MenuItem value="all">All Events</MenuItem>
+                  <MenuItem value="upcoming">Upcoming</MenuItem>
+                  <MenuItem value="past">Past</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          </CardContent>
+        </Card>
 
-        <div style={styles.calendar}>
+        <Box sx={styles.calendar}>
           <Calendar onChange={setDate} value={date} />
-        </div>
+        </Box>
 
-        <Typography variant="h5" gutterBottom>
-          Events on {date.toDateString()}:
-        </Typography>
-        {loading ? (
-          <p style={styles.loading}>Loading events...</p>
-        ) : eventsForSelectedDate.length > 0 ? (
-          <ul style={styles.eventsList}>
-            {eventsForSelectedDate.map((event) => (
-              <li key={event.event_id} style={styles.eventItem}>
-                <span>
-                  {event.title} <br />
-                  Start: {new Date(event.start_time).toLocaleString()} <br />
-                  End: {new Date(event.end_time).toLocaleString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No events for this day.</p>
+        <Card sx={styles.card}>
+          <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+            <Typography variant={isMobile ? "h6" : "h5"} sx={styles.header}>
+              Events on {date.toDateString()}:
+            </Typography>
+            {loading ? (
+              <Typography sx={styles.loading}>Loading events...</Typography>
+            ) : eventsForSelectedDate.length > 0 ? (
+              <Box component="ul" sx={styles.eventsList}>
+                {eventsForSelectedDate.map((event) => (
+                  <Box component="li" key={event.event_id} sx={styles.eventItem}>
+                    <span>
+                      <Typography variant={isMobile ? "subtitle2" : "subtitle1"} gutterBottom>
+                        {event.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Start: {new Date(event.start_time).toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        End: {new Date(event.end_time).toLocaleString()}
+                      </Typography>
+                    </span>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography align="center">No events for this day.</Typography>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* All Events section */}
+        <Card sx={styles.card}>
+          <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+            <Typography variant={isMobile ? "h6" : "h5"} sx={styles.header}>
+              All Events
+            </Typography>
+            {loading ? (
+              <Typography sx={styles.loading}>Loading all events...</Typography>
+            ) : allFilteredEvents.length > 0 ? (
+              <Box component="ul" sx={styles.eventsList}>
+                {allFilteredEvents.map((event) => (
+                  <Box component="li" key={event.event_id} sx={styles.eventItem}>
+                    <span>
+                      <Typography variant={isMobile ? "subtitle2" : "subtitle1"} gutterBottom>
+                        {event.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Start: {new Date(event.start_time).toLocaleString()}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        End: {new Date(event.end_time).toLocaleString()}
+                      </Typography>
+                    </span>
+                  </Box>
+                ))}
+              </Box>
+            ) : (
+              <Typography align="center">No events found matching your criteria.</Typography>
+            )}
+          </CardContent>
+        </Card>
+
+        {error && (
+          <Card sx={{ mt: 2, bgcolor: 'error.light' }}>
+            <CardContent>
+              <Typography color="error" sx={styles.errorMessage}>
+                {error}
+              </Typography>
+            </CardContent>
+          </Card>
         )}
-
-        <Typography variant="h5" gutterBottom sx={{ mt: 4 }}>
-          All Events:
-        </Typography>
-        {loading ? (
-          <p style={styles.loading}>Loading all events...</p>
-        ) : allFilteredEvents.length > 0 ? (
-          <ul style={styles.eventsList}>
-            {allFilteredEvents.map((event) => (
-              <li key={event.event_id} style={styles.eventItem}>
-                <span>
-                  {event.title} <br />
-                  Start: {new Date(event.start_time).toLocaleString()} <br />
-                  End: {new Date(event.end_time).toLocaleString()}
-                </span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No events found matching your criteria.</p>
-        )}
-      </div>
-
-      {error && <p style={styles.errorMessage}>{error}</p>}
-    </div>
+      </Box>
+    </Container>
   );
 };
 

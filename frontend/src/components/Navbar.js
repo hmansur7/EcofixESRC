@@ -109,7 +109,7 @@ const Navbar = ({ title, links }) => {
               sx={{
                 color: 'white',
                 '&:hover': {
-                  backgroundColor: 'rgba(252, 163, 17, 0.2)',
+                  backgroundColor: 'rgb(252, 162, 17)',
                 },
               }}
             >
@@ -122,7 +122,7 @@ const Navbar = ({ title, links }) => {
             sx={{
               cursor: 'pointer',
               '&:hover': {
-                backgroundColor: 'rgba(252, 163, 17, 0.2)',
+                backgroundColor: 'rgb(252, 162, 17)',
               },
             }}
           >
@@ -136,7 +136,7 @@ const Navbar = ({ title, links }) => {
             sx={{
               cursor: 'pointer',
               '&:hover': {
-                backgroundColor: 'rgba(252, 163, 17, 0.2)',
+                backgroundColor: 'rgb(252, 162, 17)',
               },
             }}
           >
@@ -175,7 +175,7 @@ const Navbar = ({ title, links }) => {
                   sx={{ 
                     margin: "0 0.5rem",
                     '&:hover': {
-                      backgroundColor: 'rgba(252, 163, 17, 0.2)',
+                      backgroundColor: 'rgb(252, 162, 17)',
                     },
                   }}
                 >
@@ -214,7 +214,7 @@ const Navbar = ({ title, links }) => {
                 transformOrigin={{ horizontal: "right", vertical: "top" }}
                 anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
               >
-                <MenuItem disabled>
+                <MenuItem>
                   <Avatar sx={{ bgcolor: "#fca311" }}>
                     {getInitials(userInfo.name)}
                   </Avatar>

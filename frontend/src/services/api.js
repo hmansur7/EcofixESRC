@@ -67,6 +67,8 @@ export const changePassword = async (currentPassword, newPassword) => {
 export const logoutUser = () => {
     localStorage.removeItem("authToken");
     localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("userEmail");
     localStorage.removeItem("pendingVerification");
 };
 export const getEvents = async () => {
