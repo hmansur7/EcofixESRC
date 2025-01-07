@@ -11,26 +11,6 @@ const API = axios.create({
     }
 });
 
-API.interceptors.request.use(
-    (config) => {
-        console.log('Request config:', config);
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
-API.interceptors.request.use(
-    (config) => {
-        console.log('Request config:', config);
-        return config;
-    },
-    (error) => {
-        return Promise.reject(error);
-    }
-);
-
 export const loginUser = async (email, password) => {
     try {
         const response = await API.post("auth/login/", { email, password });        
@@ -134,26 +114,6 @@ export const removeAdminCourse = async (courseId) => {
 export const getAdminUsers = async () => {
     const response = await API.get("admin/users/");
     return response.data;
-};
-
-export const registerUserEvent = async (eventId) => {
-    const response = await API.post(`events/${eventId}/register/`);
-    return response.data;
-};
-
-export const getUserRegisteredEvents = async () => {
-    const response = await API.get(`events/user/list/`);
-    return response.data;
-};
-
-export const unregisterUserEvent = async (eventId) => {
-    const response = await API.delete(`events/${eventId}/unregister/`);
-    return response.data;
-};
-
-export const getEventRegistrations = async (eventId) => {
-    const response = await API.get(`admin/events/${eventId}/registrations/`);
-    return response.data; 
 };
 
 export const updateLessonProgress = async (lessonId, completed) => {

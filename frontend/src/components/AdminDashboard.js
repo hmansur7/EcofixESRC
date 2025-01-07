@@ -15,10 +15,6 @@ import {
   TextField,
   IconButton,
   Divider,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
 } from "@mui/material";
 import { Delete, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
@@ -30,7 +26,6 @@ import {
   getAdminEvents,
   addAdminEvent,
   removeAdminEvent,
-  getEventRegistrations,
   logoutUser,
 } from "../services/api";
 import LessonManagement from "./LessonManagement";
@@ -46,9 +41,7 @@ const AdminDashboard = () => {
     start_time: "",
     end_time: "",
   });
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [registeredUsers, setRegisteredUsers] = useState([]);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
 
@@ -122,24 +115,7 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleViewRegisteredUsers = async (event) => {
-    try {
-      const response = await getEventRegistrations(event.event_id);
-      setSelectedEvent(event);
-      setRegisteredUsers(response);
-      setIsDialogOpen(true);
-    } catch (error) {
-      console.error("Error fetching registered users:", error);
-      alert("Failed to fetch registered users. Please try again.");
-    }
-  };
-
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setSelectedEvent(null);
-    setRegisteredUsers([]);
-  };
-
+  
   const openLessonDialog = (course) => {
     setSelectedCourse(course);
     setIsLessonDialogOpen(true);
@@ -209,7 +185,6 @@ const AdminDashboard = () => {
       </Box>
       <Divider sx={{ mb: 3 }} />
 
-      {/* User Management */}
       <Card sx={{ mb: 3, ...styles.card }}>
         <CardContent>
           <Typography variant="h5" sx={styles.header}>
@@ -409,13 +384,6 @@ const AdminDashboard = () => {
                       {new Date(event.end_time).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outlined"
-                        sx={{ ...styles.button, textTransform: "none" }}
-                        onClick={() => handleViewRegisteredUsers(event)}
-                      >
-                        View Users
-                      </Button>
                       <IconButton
                         onClick={() => handleRemoveEvent(event.event_id)}
                         sx={{ color: "red" }}
@@ -430,64 +398,6 @@ const AdminDashboard = () => {
           </TableContainer>
         </CardContent>
       </Card>
-
-      <Dialog open={isDialogOpen} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>Registered Users</DialogTitle>
-        <DialogContent>
-          {selectedEvent && (
-            <>
-              <Typography variant="h6">
-                Event: {selectedEvent.title}
-              </Typography>
-              <Typography variant="subtitle1">
-                Start: {new Date(selectedEvent.start_time).toLocaleString()}
-              </Typography>
-              <Typography variant="subtitle1">
-                End: {new Date(selectedEvent.end_time).toLocaleString()}
-              </Typography>
-              <TableContainer component={Paper} sx={{ mt: 2 }}>
-                <Table>
-                  <TableHead>
-                    <TableRow>
-                      <TableCell sx={styles.tableHeader}>Name</TableCell>
-                      <TableCell sx={styles.tableHeader}>Email</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {registeredUsers.length > 0 ? (
-                      registeredUsers.map((user) => (
-                        <TableRow key={user.user_id}>
-                          <TableCell>{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                        </TableRow>
-                      ))
-                    ) : (
-                      <TableRow>
-                        <TableCell colSpan={2} align="center">
-                          No registered users.
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={handleCloseDialog}
-            variant="contained"
-            sx={{
-              backgroundColor: "darkred",
-              color: "white",
-              "&:hover": { backgroundColor: "red" },
-            }}
-          >
-            Close
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Box>
   );
 };
