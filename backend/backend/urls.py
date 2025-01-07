@@ -1,4 +1,4 @@
-# urls.py
+# backend/backend/urls.py
 from django.urls import path, include
 from django.contrib import admin
 from rest_framework.routers import DefaultRouter
@@ -30,7 +30,8 @@ from content.views import (
     DeleteLessonResourceView,
     VerifyEmailView,
     ResendVerificationView,
-    ChangePasswordView
+    ChangePasswordView,
+    LogoutView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -50,7 +51,7 @@ urlpatterns = [
     path('api/auth/verify-email/', VerifyEmailView.as_view(), name='verify-email'),
     path('api/auth/resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
     path('api/auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
-
+    path('api/auth/logout/', LogoutView.as_view(), name='logout'),
     # Event endpoints
     path('api/events/<int:event_id>/register/', EventRegistrationView.as_view(), name='register-for-event'),
     path('api/events/registered/', UserRegisteredEventsListView.as_view(), name='registered-events-list'),

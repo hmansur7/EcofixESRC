@@ -12,9 +12,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         admins = [
             {
-                'email': 'hmansur@admin.com',
-                'name': 'Haarish',
-                'password': 'A7F35pe4ymFc4EJEvgng',  
+                'email': 'admin@test.com',
+                'name': 'Test Admin',
+                'password': 'TestAdmin123!',  # Simpler password for testing
                 'role': 'admin'
             }
         ]
@@ -28,14 +28,13 @@ class Command(BaseCommand):
                             name=admin['name'],
                             password=admin['password'],
                             role=admin['role'],
-                            is_verified=True,  
-                            is_staff=True,     
-                            is_superuser=True  
+                            is_verified=True,
+                            is_superuser=True
                         )
                         
                         verification_token = EmailVerificationToken.objects.create(
                             user=user,
-                            is_used=True  
+                            is_used=True
                         )
 
                         self.stdout.write(

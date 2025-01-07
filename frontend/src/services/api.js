@@ -1,26 +1,42 @@
+// frontend/src/services/api.js
 import axios from "axios";
 
 
 const API = axios.create({
-    baseURL: "http://127.0.0.1:8000/api/",
+    baseURL: 'http://127.0.0.1:8000/api/',  
+    withCredentials: true,
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+    }
 });
 
-API.interceptors.request.use((config) => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-        config.headers.Authorization = `Token ${token}`;
+API.interceptors.request.use(
+    (config) => {
+        console.log('Request config:', config);
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
     }
-    return config;
-});
+);
+
+API.interceptors.request.use(
+    (config) => {
+        console.log('Request config:', config);
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
 
 export const loginUser = async (email, password) => {
     try {
-        const response = await API.post("auth/login/", { email, password });
-
-        if (response.data.token) {
+        const response = await API.post("auth/login/", { email, password });        
+        if (response.data) {
             localStorage.setItem("userName", response.data.name);
             localStorage.setItem("userEmail", response.data.email);
-            localStorage.setItem("authToken", response.data.token);
             localStorage.setItem("userRole", response.data.role);
         }
         return response.data;
@@ -39,8 +55,7 @@ export const registerUser = async (name, email, password) => {
 
 export const verifyEmail = async (token) => {
     const response = await API.post("auth/verify-email/", { token });
-    if (response.data.token) {
-        localStorage.setItem("authToken", response.data.token);
+    if (response.data.role) {
         localStorage.setItem("userRole", response.data.role);
     }
     return response.data;
@@ -64,13 +79,18 @@ export const changePassword = async (currentPassword, newPassword) => {
     return response.data;
 };
 
-export const logoutUser = () => {
-    localStorage.removeItem("authToken");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userName");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("pendingVerification");
+export const logoutUser = async () => {
+    try {
+        await API.post("auth/logout/");
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("pendingVerification");
+    } catch (error) {
+        console.error("Logout failed:", error);
+    }
 };
+
 export const getEvents = async () => {
     const response = await API.get("events/");
     return response.data;

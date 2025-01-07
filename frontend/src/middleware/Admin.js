@@ -1,12 +1,12 @@
+// frontend/src/middleware/Admin.js
 import React from "react";
 import { Navigate } from "react-router-dom";
 
 const AdminRoute = ({ children }) => {
-  const token = localStorage.getItem("authToken");
-  const role = localStorage.getItem("userRole"); // Assume `userRole` is stored during login
+  const role = localStorage.getItem("userRole");
+  const isAuthenticated = localStorage.getItem("userName") && role;
 
-  // If not authenticated or not an admin, redirect to login
-  if (!token || role !== "admin") {
+  if (!isAuthenticated || role !== "admin") {
     return <Navigate to="/login" />;
   }
 

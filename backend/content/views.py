@@ -1,4 +1,4 @@
-# views.py
+# backend/content/views.py
 from django.forms import ValidationError
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -331,19 +331,43 @@ class LoginView(APIView):
                 }, status=status.HTTP_403_FORBIDDEN)
 
             token, _ = Token.objects.get_or_create(user=user)
-
-            return Response({
-                "token": token.key,
+            
+            response = Response({
                 "role": user.role,
-                "name": user.name,  
-                "email": user.email  
-            }, status=status.HTTP_200_OK)
+                "name": user.name,
+                "email": user.email
+            })
+
+            response.set_cookie(
+                'auth_token',
+                token.key,
+                domain='127.0.0.1',        # Add this
+                path='/',                  # Add this
+                max_age=60*60*24*7,        # 7 days
+                httponly=True,
+                samesite='Lax',
+                secure=False               # Set to True in production
+            )
+
+            return response
 
         except AppUser.DoesNotExist:
             return Response(
                 {"error": "No account found with this email address."}, 
                 status=status.HTTP_404_NOT_FOUND
             )
+        
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        if request.user.auth_token:
+            request.user.auth_token.delete()
+        
+        response = Response({"message": "Successfully logged out."})
+        response.delete_cookie(settings.COOKIE_NAME)
+        
+        return response
     
 class CourseViewSet(viewsets.ModelViewSet):
     queryset = Course.objects.all()

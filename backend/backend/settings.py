@@ -1,3 +1,4 @@
+# backend/backend/settings.py
 """
 Django settings for backend project.
 
@@ -27,7 +28,7 @@ SECRET_KEY = 'django-insecure-8fw96h=_&q69=by*ahwsn$@1+(kt*tves(nz!+kj$bzl#v)=+^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 # Media
 MEDIA_URL = '/media/'
@@ -125,6 +126,21 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
+# Cookie settings
+SESSION_COOKIE_DOMAIN = '127.0.0.1'  # Add this
+CSRF_COOKIE_DOMAIN = '127.0.0.1'     # Add this
+SESSION_COOKIE_SECURE = False  # Set to True in production
+CSRF_COOKIE_SECURE = False    # Set to True in production
+SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_HTTPONLY = True
+SESSION_COOKIE_HTTPONLY = True
+COOKIE_SECURE = False  # For HTTPS only
+COOKIE_HTTPONLY = True
+COOKIE_SAMESITE = 'Lax'
+COOKIE_NAME = 'auth_token'
+COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
+
 # Frontend URL for email verification
 FRONTEND_URL = config('FRONTEND_URL')
 
@@ -150,11 +166,44 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",  
+]
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_ALL_ORIGINS = False  
+CORS_EXPOSE_HEADERS = ['Set-Cookie']
+
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'content.authentication.CookieTokenAuthentication',
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
