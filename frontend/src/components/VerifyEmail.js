@@ -30,9 +30,18 @@ const VerifyEmail = () => {
     const verifyToken = async () => {
         try {
             setLoading(true);
-            await verifyEmail(token);
+            const response = await verifyEmail(token);
+            
+            // Store user data just like after login
+            if (response.role) {
+                localStorage.setItem("userRole", response.role);
+                localStorage.setItem("userName", response.name);  // If name is returned
+                localStorage.setItem("userEmail", response.email);  // If email is returned
+            }
+            
             setStatus("success");
             localStorage.removeItem("pendingVerification");
+            
             setTimeout(() => {
                 navigate("/learning");
             }, 2000);

@@ -191,11 +191,26 @@ class VerifyEmailView(APIView):
 
             token, _ = Token.objects.get_or_create(user=user)
 
-            return Response({
+            response = Response({
                 'message': 'Email verified successfully',
-                'token': token.key,
-                'role': user.role
+                'role': user.role,
+                'name': user.name,
+                'email': user.email
             })
+
+            # Set cookie
+            response.set_cookie(
+                'auth_token',
+                token.key,
+                max_age=60*60*24*7,    # 7 days
+                httponly=True,
+                samesite='Lax',
+                secure=False,           # False for development
+                domain='127.0.0.1',
+                path='/'
+            )
+
+            return response
 
         except EmailVerificationToken.DoesNotExist:
             return Response(
@@ -248,7 +263,6 @@ class ChangePasswordView(APIView):
 
         user = request.user
 
-        # Verify current password
         if not user.check_password(current_password):
             return Response(
                 {"error": "Current password is incorrect."}, 
@@ -338,9 +352,9 @@ class LoginView(APIView):
             response.set_cookie(
                 'auth_token',
                 token.key,
-                domain='127.0.0.1',        # Add this
-                path='/',                  # Add this
-                max_age=60*60*24*7,        # 7 days
+                domain='127.0.0.1',        
+                path='/',                  
+                max_age=60*60*24*7,        
                 httponly=True,
                 samesite='Lax',
                 secure=False               # Set to True in production
@@ -483,16 +497,6 @@ class AdminRemoveEventView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Event.objects.all()
     lookup_field = 'event_id'
-
-class AdminEventRegistrationsView(APIView):
-    permission_classes = [IsAdmin]
-
-    def get(self, request, event_id):
-        event = get_object_or_404(Event, event_id=event_id)
-        registrations = Registrations.objects.filter(event=event).select_related('user')
-        users = [registration.user for registration in registrations]
-        serializer = UserSerializer(users, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
 
 class AdminAddLessonView(CreateAPIView):
     permission_classes = [IsAdmin]

@@ -127,8 +127,8 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL')
 
 # Cookie settings
-SESSION_COOKIE_DOMAIN = '127.0.0.1'  # Add this
-CSRF_COOKIE_DOMAIN = '127.0.0.1'     # Add this
+SESSION_COOKIE_DOMAIN = '127.0.0.1'  
+CSRF_COOKIE_DOMAIN = '127.0.0.1'     
 SESSION_COOKIE_SECURE = False  # Set to True in production
 CSRF_COOKIE_SECURE = False    # Set to True in production
 SESSION_COOKIE_SAMESITE = 'Lax'

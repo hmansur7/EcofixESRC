@@ -126,11 +126,9 @@ const Register = () => {
         formData.password
       );
       
-      // Store email for verification
       localStorage.setItem("pendingVerification", formData.email);
       setRegistrationSuccess(true);
       
-      // Navigate to verification page after a brief delay to show success message
       setTimeout(() => {
         navigate("/verify-email", { 
           state: { email: formData.email }
