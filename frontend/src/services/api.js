@@ -66,8 +66,15 @@ export const logoutUser = async () => {
         localStorage.removeItem("userName");
         localStorage.removeItem("userEmail");
         localStorage.removeItem("pendingVerification");
+        
+        window.location.href = '/';
     } catch (error) {
         console.error("Logout failed:", error);
+        localStorage.removeItem("userRole");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userEmail");
+        localStorage.removeItem("pendingVerification");
+        window.location.href = '/';
     }
 };
 

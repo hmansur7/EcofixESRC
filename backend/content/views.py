@@ -346,6 +346,16 @@ class LoginView(APIView):
                 secure=False               # Set to True in production
             )
 
+            response.set_cookie(
+                'persistent_auth',
+                'true',
+                max_age=60*60*24*7,    # 7 days
+                httponly=True,
+                samesite='Lax',
+                secure=False,
+                domain='127.0.0.1',
+                path='/'
+            )
             return response
 
         except AppUser.DoesNotExist:

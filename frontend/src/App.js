@@ -4,6 +4,7 @@ import {
   Routes,
   Route,
   useLocation,
+  Navigate,
 } from "react-router-dom";
 import Learning from "./components/LearningDashboard";
 import Events from "./components/Events";
@@ -17,6 +18,16 @@ import AdminRoute from "./middleware/Admin";
 import AdminDashboard from "./components/AdminDashboard";
 import VerifyEmail from "./components/VerifyEmail";  // Import the new component
 
+const HomeRedirect = () => {
+  const isAuthenticated = localStorage.getItem("userRole") && localStorage.getItem("userName");
+  
+  if (isAuthenticated) {
+    return <Navigate to="/learning" replace />;
+  }
+  
+  return <HomePage />;
+};
+
 function App() {
   const navbarLinks = [
     { label: "Learning", path: "/learning" },
@@ -26,9 +37,7 @@ function App() {
 
   const Layout = ({ children }) => {
     const location = useLocation();
-
     const validNavbarRoutes = ["/learning", "/events", "/progress"];
-
     const showNavbar = validNavbarRoutes.includes(location.pathname);
 
     return (
@@ -43,16 +52,16 @@ function App() {
     <Router>
       <Layout>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={<HomePage />} />
+          {/* Change the home route to use HomeRedirect */}
+          <Route path="/" element={<HomeRedirect />} />
+          
+          {/* Rest of your routes remain the same */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
-          {/* Verification Routes */}
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route path="/verify-email/:token" element={<VerifyEmail />} />
 
-          {/* User Private Routes */}
           <Route
             path="/learning"
             element={
@@ -78,7 +87,6 @@ function App() {
             }
           />
 
-          {/* Admin Private Route */}
           <Route
             path="/admin/dashboard"
             element={
@@ -88,7 +96,6 @@ function App() {
             }
           />
 
-          {/* Catch-all route for invalid paths */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>

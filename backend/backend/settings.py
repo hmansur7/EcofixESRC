@@ -141,6 +141,11 @@ COOKIE_SAMESITE = 'Lax'
 COOKIE_NAME = 'auth_token'
 COOKIE_MAX_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
 
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE = 60 * 60 * 24 * 7  # 7 days in seconds
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False
+SESSION_SAVE_EVERY_REQUEST = True
+
 # Frontend URL for email verification
 FRONTEND_URL = config('FRONTEND_URL')
 
