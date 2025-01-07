@@ -19,6 +19,7 @@ import {
   Card as MobileCard,
   CardActions,
   TablePagination,
+  Container,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { getCourses } from "../services/api";
@@ -165,180 +166,179 @@ const LearningDashboard = () => {
   );
 
   return (
-    <Box sx={{ padding: isMobile ? 2 : 3 }}>
-      <Typography variant="h4" sx={styles.header} gutterBottom>
-        Learning Dashboard
-      </Typography>
-      <Card sx={styles.card}>
-        <CardContent>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: isMobile ? "column" : "row",
-              justifyContent: "space-between",
-              alignItems: isMobile ? "stretch" : "center",
-              mb: 2,
-            }}
-          >
-            <Typography
-              variant={isMobile ? "h6" : "h5"}
+    <Container maxWidth="lg">
+      <Box sx={{ padding: isMobile ? 2 : 3 }}>
+        <Card sx={styles.card}>
+          <CardContent>
+            <Box
               sx={{
-                ...styles.header,
-                mb: isMobile ? 1 : 0,
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                justifyContent: "space-between",
+                alignItems: isMobile ? "stretch" : "center",
+                mb: 2,
               }}
             >
-              Available Courses
-            </Typography>
-            <TextField
-              placeholder="Search courses..."
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={handleSearchChange}
-              sx={styles.searchField}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="action" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-          </Box>
-
-          {isMobile ? (
-            <Box>
-              {filteredCourses.length > 0 ? (
-                <>
-                  {filteredCourses
-                    .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                    .map((course) => (
-                      <CourseCard key={course.course_id} course={course} />
-                    ))}
-                  <TablePagination
-                    rowsPerPageOptions={[5, 10, 25]}
-                    component="div"
-                    count={filteredCourses.length}
-                    rowsPerPage={rowsPerPage}
-                    page={page}
-                    onPageChange={handleChangePage}
-                    onRowsPerPageChange={handleChangeRowsPerPage}
-                    sx={{
-                      backgroundColor: "#f5f5f5",
-                      mt: 2,
-                      borderRadius: "4px",
-                      ".MuiTablePagination-select": {
-                        backgroundColor: "white",
-                        borderRadius: "4px",
-                      },
-                      ".MuiTablePagination-selectIcon": {
-                        color: "#14213d",
-                      },
-                      "& .MuiButtonBase-root": {
-                        color: "#14213d",
-                        "&:hover": {
-                          color: "#fca311",
-                        },
-                        "&.Mui-disabled": {
-                          color: "rgba(0, 0, 0, 0.26)",
-                        },
-                      },
-                      ...styles.tablePagination,
-                    }}
-                  />
-                </>
-              ) : (
-                <Typography align="center" sx={{ mt: 2 }}>
-                  No courses found matching your search.
-                </Typography>
-              )}
-            </Box>
-          ) : (
-            <TableContainer component={Paper} sx={{ mt: 2 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={styles.tableHeader}>Course Title</TableCell>
-                    <TableCell sx={styles.tableHeader}>Description</TableCell>
-                    <TableCell sx={styles.tableHeader} align="right">
-                      Actions
-                    </TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {filteredCourses.length > 0 ? (
-                    filteredCourses
-                      .slice(
-                        page * rowsPerPage,
-                        page * rowsPerPage + rowsPerPage
-                      )
-                      .map((course) => (
-                        <TableRow key={course.course_id}>
-                          <TableCell>{course.title}</TableCell>
-                          <TableCell>{course.description}</TableCell>
-                          <TableCell align="right">
-                            <Button
-                              variant="contained"
-                              onClick={() => handleViewCourse(course)}
-                              sx={{
-                                backgroundColor: "#14213d",
-                                color: "white",
-                                "&:hover": { backgroundColor: "#fca311" },
-                              }}
-                            >
-                              View Course
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={3} align="center">
-                        No courses found matching your search.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-              <TablePagination
-                rowsPerPageOptions={[5, 10, 25]}
-                component="div"
-                count={filteredCourses.length}
-                rowsPerPage={rowsPerPage}
-                page={page}
-                onPageChange={handleChangePage}
-                onRowsPerPageChange={handleChangeRowsPerPage}
+              <Typography
+                variant={isMobile ? "h6" : "h5"}
                 sx={{
-                  backgroundColor: "#fca311",
-                  ".MuiTablePagination-select": {
-                    backgroundColor: "white",
-                    borderRadius: "4px",
-                  },
-                  ".MuiTablePagination-selectIcon": {
-                    color: "#14213d",
-                  },
-                  "& .MuiButtonBase-root": {
-                    color: "#14213d",
-                    "&.Mui-disabled": {
-                      color: "rgba(0, 0, 0, 0.26)",
-                    },
-                  },
+                  ...styles.header,
+                  mb: isMobile ? 1 : 0,
+                }}
+              >
+                Available Courses
+              </Typography>
+              <TextField
+                placeholder="Search courses..."
+                variant="outlined"
+                size="small"
+                value={searchTerm}
+                onChange={handleSearchChange}
+                sx={styles.searchField}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search color="action" />
+                    </InputAdornment>
+                  ),
                 }}
               />
-            </TableContainer>
-          )}
-        </CardContent>
-      </Card>
+            </Box>
 
-      {selectedCourse && (
-        <ViewCourseModal
-          open={modalOpen}
-          onClose={closeModal}
-          courseId={selectedCourse.course_id}
-          courseTitle={selectedCourse.title}
-        />
-      )}
-    </Box>
+            {isMobile ? (
+              <Box>
+                {filteredCourses.length > 0 ? (
+                  <>
+                    {filteredCourses
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((course) => (
+                        <CourseCard key={course.course_id} course={course} />
+                      ))}
+                    <TablePagination
+                      rowsPerPageOptions={[5, 10, 25]}
+                      component="div"
+                      count={filteredCourses.length}
+                      rowsPerPage={rowsPerPage}
+                      page={page}
+                      onPageChange={handleChangePage}
+                      onRowsPerPageChange={handleChangeRowsPerPage}
+                      sx={{
+                        backgroundColor: "#f5f5f5",
+                        mt: 2,
+                        borderRadius: "4px",
+                        ".MuiTablePagination-select": {
+                          backgroundColor: "white",
+                          borderRadius: "4px",
+                        },
+                        ".MuiTablePagination-selectIcon": {
+                          color: "#14213d",
+                        },
+                        "& .MuiButtonBase-root": {
+                          color: "#14213d",
+                          "&:hover": {
+                            color: "#fca311",
+                          },
+                          "&.Mui-disabled": {
+                            color: "rgba(0, 0, 0, 0.26)",
+                          },
+                        },
+                        ...styles.tablePagination,
+                      }}
+                    />
+                  </>
+                ) : (
+                  <Typography align="center" sx={{ mt: 2 }}>
+                    No courses found matching your search.
+                  </Typography>
+                )}
+              </Box>
+            ) : (
+              <TableContainer component={Paper} sx={{ mt: 2 }}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={styles.tableHeader}>Course Title</TableCell>
+                      <TableCell sx={styles.tableHeader}>Description</TableCell>
+                      <TableCell sx={styles.tableHeader} align="right">
+                        Actions
+                      </TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredCourses.length > 0 ? (
+                      filteredCourses
+                        .slice(
+                          page * rowsPerPage,
+                          page * rowsPerPage + rowsPerPage
+                        )
+                        .map((course) => (
+                          <TableRow key={course.course_id}>
+                            <TableCell>{course.title}</TableCell>
+                            <TableCell>{course.description}</TableCell>
+                            <TableCell align="right">
+                              <Button
+                                variant="contained"
+                                onClick={() => handleViewCourse(course)}
+                                sx={{
+                                  backgroundColor: "#14213d",
+                                  color: "white",
+                                  "&:hover": { backgroundColor: "#fca311" },
+                                }}
+                              >
+                                View Course
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                    ) : (
+                      <TableRow>
+                        <TableCell colSpan={3} align="center">
+                          No courses found matching your search.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={filteredCourses.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  sx={{
+                    backgroundColor: "#fca311",
+                    ".MuiTablePagination-select": {
+                      backgroundColor: "white",
+                      borderRadius: "4px",
+                    },
+                    ".MuiTablePagination-selectIcon": {
+                      color: "#14213d",
+                    },
+                    "& .MuiButtonBase-root": {
+                      color: "#14213d",
+                      "&.Mui-disabled": {
+                        color: "rgba(0, 0, 0, 0.26)",
+                      },
+                    },
+                  }}
+                />
+              </TableContainer>
+            )}
+          </CardContent>
+        </Card>
+
+        {selectedCourse && (
+          <ViewCourseModal
+            open={modalOpen}
+            onClose={closeModal}
+            courseId={selectedCourse.course_id}
+            courseTitle={selectedCourse.title}
+          />
+        )}
+      </Box>
+    </Container>
   );
 };
 

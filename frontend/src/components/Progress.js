@@ -210,14 +210,12 @@ const ProgressDashboard = () => {
 
   return (
     <Container maxWidth="lg" sx={styles.container}>
-      <Typography variant={isMobile ? "h5" : "h4"} sx={styles.header}>
-        Progress Dashboard
-      </Typography>
       {loading ? (
         <Typography sx={styles.loadingText}>Loading progress...</Typography>
       ) : (
         <Card sx={styles.card}>
           <CardContent sx={{ p: { xs: 1, sm: 2 } }}>
+            <Typography sx={styles.header}>Track Your Progress</Typography>
             <Box sx={styles.filterContainer}>
               <TextField
                 placeholder="Search courses..."
