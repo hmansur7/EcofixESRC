@@ -6,8 +6,6 @@ from content.views import (
     UserViewSet, 
     CourseViewSet,  
     EventViewSet,   
-    UserEventsView,
-    EventRegistrationView,
     RegisterView, 
     LoginView, 
     AdminUserListView,
@@ -17,8 +15,6 @@ from content.views import (
     AdminRemoveEventView,
     AdminListCoursesView, 
     AdminListEventsView, 
-    UserRegisteredEventsListView,
-    UnregisterFromEventView, 
     AdminEventRegistrationsView, 
     UpdateLessonProgressView, 
     GetCourseProgressView,
@@ -52,11 +48,7 @@ urlpatterns = [
     path('api/auth/resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
     path('api/auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
-    # Event endpoints
-    path('api/events/<int:event_id>/register/', EventRegistrationView.as_view(), name='register-for-event'),
-    path('api/events/registered/', UserRegisteredEventsListView.as_view(), name='registered-events-list'),
-    path('api/events/<int:event_id>/unregister/', UnregisterFromEventView.as_view(), name='unregister-event'),
-    path('api/events/user/list/', UserEventsView.as_view(), name='user-event-list'),
+    
     # Course and Lesson endpoints
     path('api/lessons/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
     path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),

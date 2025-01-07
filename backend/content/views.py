@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -18,7 +17,6 @@ from .models import (
     AppUser,
     Course,
     Event,
-    Registrations,
     LessonResource,
     EmailVerificationToken
 )
@@ -28,7 +26,6 @@ from .serializers import (
     UserSerializer,
     CourseSerializer,
     EventSerializer,
-    UserRegisteredEventsListSerializer,
     LessonResourceSerializer,
     LessonResourceBulkSerializer,
     EmailVerificationSerializer,
@@ -379,49 +376,6 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
 
-class UserEventsView(APIView):
-    serializer_class = EventSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        return Event.objects.filter(registrations__user=self.request.user)
-    
-    def get(self, request, *args, **kwargs):
-        queryset = self.get_queryset()
-        serializer = self.serializer_class(queryset, many=True)
-        return Response(serializer.data)
-
-class EventRegistrationView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, event_id):
-        event = get_object_or_404(Event, event_id=event_id)
-        try:
-            Registrations.objects.create(user=request.user, event=event)
-            return Response({"message": "Successfully registered for event."}, 
-                          status=status.HTTP_201_CREATED)
-        except Exception as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-class UserRegisteredEventsListView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        registrations = Registrations.objects.filter(user=request.user)
-        events = [registration.event for registration in registrations]
-        serializer = UserRegisteredEventsListSerializer(events, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-class UnregisterFromEventView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def delete(self, request, event_id):
-        registration = get_object_or_404(
-            Registrations, user=request.user, event__event_id=event_id
-        )
-        registration.delete()
-        return Response({"message": "Successfully unregistered from event."}, 
-                      status=status.HTTP_200_OK)
 
 class CourseLessonsView(APIView):
     permission_classes = [IsAuthenticated]

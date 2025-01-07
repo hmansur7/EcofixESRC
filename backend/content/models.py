@@ -129,7 +129,6 @@ class Event(models.Model):
     description = models.TextField(null=True, blank=True)
     start_time = models.DateTimeField(null=False, blank=False)
     end_time = models.DateTimeField(null=False, blank=False)
-    attendees = models.ManyToManyField(AppUser, related_name='events', blank=True)
 
     def clean(self):
         if self.end_time <= self.start_time:
@@ -138,14 +137,3 @@ class Event(models.Model):
     def __str__(self):
         return f"{self.title} on {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}"
 
-class Registrations(models.Model):
-    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name='registrations')
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='registrations')
-
-    def __str__(self):
-        return f"{self.user.name} registered for {self.event.title}"
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['user', 'event'], name='unique_user_event')
-        ]

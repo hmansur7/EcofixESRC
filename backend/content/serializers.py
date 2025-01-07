@@ -42,12 +42,8 @@ class CourseSerializer(serializers.ModelSerializer):
 class EventSerializer(serializers.ModelSerializer):  
     class Meta:
         model = Event  
-        fields = ['event_id', 'title', 'description', 'start_time', 'end_time', 'attendees']
-
-class UserRegisteredEventsListSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Event 
         fields = ['event_id', 'title', 'description', 'start_time', 'end_time']
+
 
 class CourseProgressSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
