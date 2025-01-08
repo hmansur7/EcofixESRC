@@ -96,13 +96,42 @@ class Lesson(models.Model):
         return f"Lesson: {self.title} (Course: {self.course.title})"
 
 class LessonResource(models.Model):
+    RESOURCE_TYPES = [
+        ('document', 'Document'),
+        ('video', 'Video'),
+        ('image', 'Image'),
+        ('other', 'Other')
+    ]
+    
     title = models.CharField(max_length=100, null=False, blank=False)
     file = models.FileField(
         upload_to='lesson_resources/', 
-        validators=[FileExtensionValidator(allowed_extensions=['pdf', 'zip', 'jpg', 'jpeg', 'png', 'docx', 'pptx', 'xlsx'])]
-        )
-    uploaded_at = models.DateTimeField(auto_now_add=True, null=False, blank=False)
-    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources', null=False, blank=False)
+        validators=[FileExtensionValidator(
+            allowed_extensions=['pdf', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'docx', 'pptx', 'xlsx']
+        )]
+    )
+    resource_type = models.CharField(
+        max_length=20, 
+        choices=RESOURCE_TYPES, 
+        default='other'
+    )
+    allow_preview = models.BooleanField(default=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')
+
+    def save(self, *args, **kwargs):
+        # Determine resource type before saving
+        extension = self.file.name.split('.')[-1].lower()
+        if extension in ['pdf', 'docx', 'pptx', 'xlsx']:
+            self.resource_type = 'document'
+        elif extension in ['mp4', 'webm']:
+            self.resource_type = 'video'
+        elif extension in ['jpg', 'jpeg', 'png']:
+            self.resource_type = 'image'
+        else:
+            self.resource_type = 'other'
+        
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.title} - {os.path.basename(self.file.name)}"

@@ -26,7 +26,9 @@ from content.views import (
     VerifyEmailView,
     ResendVerificationView,
     ChangePasswordView,
-    LogoutView
+    LogoutView,
+    ResourcePreviewView,
+    ResourceDownloadView,
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -53,7 +55,9 @@ urlpatterns = [
     path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
     path('api/courses/<int:course_id>/lessons/', CourseLessonsView.as_view(), name='course-lessons'),
     path('api/lessons/<int:lesson_id>/resources/', LessonResourcesView.as_view(), name='lesson-resources'),
-    
+    path('api/resources/<int:resource_id>/preview/', ResourcePreviewView.as_view(), name='resource-preview'),
+    path('api/resources/<int:resource_id>/download/',ResourceDownloadView.as_view(), name='resource-download'),
+
     # Admin endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),
     path('api/admin/courses/', AdminListCoursesView.as_view(), name='admin-list-courses'),

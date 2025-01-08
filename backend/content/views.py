@@ -37,6 +37,10 @@ from django.conf import settings
 from django.core.validators import validate_email
 from django.contrib.auth.password_validation import validate_password
 import re
+from django.http import FileResponse, Http404
+from wsgiref.util import FileWrapper
+import mimetypes
+import os
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = AppUser.objects.all()
@@ -400,7 +404,6 @@ class EventViewSet(viewsets.ModelViewSet):
     serializer_class = EventSerializer
     permission_classes = [IsAuthenticated]
 
-
 class CourseLessonsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -462,6 +465,89 @@ class LessonResourcesView(ListAPIView):
         lesson_id = self.kwargs.get('lesson_id')
         return LessonResource.objects.filter(lesson_id=lesson_id).order_by('uploaded_at')
 
+class ResourcePreviewView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, resource_id):
+        try:
+            resource = LessonResource.objects.get(id=resource_id)
+            
+            if not resource.allow_preview:
+                return Response(
+                    {"error": "Preview not available for this resource"}, 
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            file_path = resource.file.path
+            content_type, _ = mimetypes.guess_type(file_path)
+            
+            if not content_type:
+                content_type = 'application/octet-stream'
+            
+            response = FileResponse(
+                FileWrapper(open(file_path, 'rb')),
+                content_type=content_type
+            )
+            
+            return response
+            
+        except LessonResource.DoesNotExist:
+            raise Http404("Resource not found")
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+class ResourceDownloadView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request, resource_id):
+        try:
+            resource = get_object_or_404(LessonResource, id=resource_id)
+            
+            if not resource.file:
+                return Response(
+                    {"error": "No file associated with this resource"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            file_path = resource.file.path
+            
+            if not os.path.exists(file_path):
+                return Response(
+                    {"error": "File not found"}, 
+                    status=status.HTTP_404_NOT_FOUND
+                )
+
+            # Use resource title and original file extension for the filename
+            original_extension = os.path.splitext(resource.file.name)[1]
+            download_filename = f"{resource.title}{original_extension}"
+            
+            # Sanitize filename to remove invalid characters
+            download_filename = "".join(c for c in download_filename if c.isalnum() or c in (' ', '-', '_', '.'))
+            
+            # Open the file and create response
+            file_handle = open(file_path, 'rb')
+            response = FileResponse(file_handle)
+            
+            # Set content type
+            content_type, encoding = mimetypes.guess_type(file_path)
+            if content_type:
+                response['Content-Type'] = content_type
+            
+            # Set Content-Disposition header with the sanitized filename
+            response['Content-Disposition'] = f'attachment; filename="{download_filename}"'
+            
+            return response
+            
+        except Exception as e:
+            print(f"Download error: {str(e)}")
+            return Response(
+                {"error": "Error downloading file"}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 # Admin Views
 class AdminUserListView(ListAPIView):
     permission_classes = [IsAdmin]

@@ -79,6 +79,13 @@ class LessonSerializer(serializers.ModelSerializer):
             'order': {'required': True},
         }
 
+class LessonResourceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonResource
+        fields = ['id', 'title', 'file', 'resource_type', 'allow_preview', 
+                 'uploaded_at', 'lesson']
+        read_only_fields = ['uploaded_at', 'resource_type']
+
 class LessonResourceBulkSerializer(serializers.Serializer):
     lesson = serializers.PrimaryKeyRelatedField(queryset=Lesson.objects.all())
     resources = serializers.ListField(
@@ -98,7 +105,7 @@ class LessonResourceBulkSerializer(serializers.Serializer):
             raise serializers.ValidationError("Number of titles must match number of files")
         
         max_size_mb = 10
-        allowed_extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'zip']
+        allowed_extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'mp4', 'webm']
 
         for file in data['resources']:
             if file.size > max_size_mb * 1024 * 1024:
@@ -128,9 +135,3 @@ class LessonResourceBulkSerializer(serializers.Serializer):
             created_resources.append(resource)
             
         return created_resources
-
-class LessonResourceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = LessonResource  
-        fields = ['id', 'title', 'file', 'uploaded_at', 'lesson']
-        read_only_fields = ['uploaded_at']

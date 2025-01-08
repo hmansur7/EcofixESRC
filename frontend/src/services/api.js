@@ -143,6 +143,56 @@ export const getLessonResources = async (lessonId) => {
     return response.data;
 };
 
+export const getResourcePreview = async (resourceId) => {
+    const response = await API.get(`resources/${resourceId}/preview/`, {
+        responseType: 'blob'
+    });
+    return response.data;
+};
+
+
+export const downloadResource = async (resourceId, resourceTitle) => {
+    try {
+        const response = await API.get(`resources/${resourceId}/download/`, {
+            responseType: 'blob'
+        });
+        
+        // Get filename from Content-Disposition header
+        let filename = resourceTitle;
+        const contentDisposition = response.headers['content-disposition'];
+        if (contentDisposition) {
+            const filenameMatch = /filename="(.+)"/.exec(contentDisposition);
+            if (filenameMatch && filenameMatch[1]) {
+                filename = filenameMatch[1];
+            }
+        }
+        
+        // Create and trigger download
+        const blob = new Blob([response.data], { 
+            type: response.headers['content-type'] || 'application/octet-stream'
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        
+        // Cleanup
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+    } catch (error) {
+        console.error('Download error:', error);
+        throw error;
+    }
+};
+
+export const getResourceMetadata = async (resourceId) => {
+    const response = await API.get(`lessons/resources/${resourceId}/`);
+    return response.data;
+};
+
 export const addAdminLesson = async (lessonData) => {
     const response = await API.post(`admin/lessons/add/`, lessonData);
     return response.data;
