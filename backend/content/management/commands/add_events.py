@@ -7,7 +7,6 @@ class Command(BaseCommand):
     help = 'Add company events to the database'
 
     def handle(self, *args, **kwargs):
-        # Define the events to add
         events_data = [
             {
                 'title': 'Annual Company Retreat',
@@ -35,7 +34,6 @@ class Command(BaseCommand):
             },
         ]
 
-        # Create events in the database
         for event_data in events_data:
             event, created = Event.objects.get_or_create(
                 title=event_data['title'],

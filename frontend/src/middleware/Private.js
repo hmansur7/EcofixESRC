@@ -2,7 +2,6 @@
 import { Navigate } from "react-router-dom";
 
 const PrivateRoute = ({ children }) => {
-  // Check for user data instead of token
   const isAuthenticated = localStorage.getItem("userRole") && localStorage.getItem("userName");
   const pendingVerification = localStorage.getItem("pendingVerification");
 

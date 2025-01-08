@@ -25,15 +25,14 @@ const Login = () => {
 
   const validationRules = {
     email: {
-      required: "Email is required",
+      required: "Please enter your email",
       pattern: {
-        value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-        message: "Invalid email address"
+        value: /\S+@\S+\.\S+/,
+        message: "Please enter a valid email"
       }
     },
     password: {
-      required: "Password is required",
-      minLength: { value: 8, message: "Password must be at least 8 characters" }
+      required: "Please enter your password"
     }
   };
 
@@ -67,11 +66,9 @@ const Login = () => {
   };
 
   useEffect(() => {
-    const formIsValid = Object.keys(formData).every(
-      field => formData[field].trim().length > 0 && !errors[field]
-    );
+    const formIsValid = formData.email.trim() !== "" && formData.password.trim() !== "";
     setIsValid(formIsValid);
-  }, [formData, errors]);
+  }, [formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

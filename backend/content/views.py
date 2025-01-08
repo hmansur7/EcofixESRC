@@ -1,46 +1,48 @@
 # backend/content/views.py
-from django.forms import ValidationError
-from rest_framework import viewsets
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
-from rest_framework.authtoken.models import Token
-from django.contrib.auth.hashers import make_password
-from django.shortcuts import get_object_or_404
-from django.db import transaction
-from .models import (
-    CourseProgress,
-    LessonProgress,
-    Lesson,
-    AppUser,
-    Course,
-    Event,
-    LessonResource,
-    EmailVerificationToken
-)
-from .serializers import (
-    CourseProgressSerializer,
-    LessonSerializer,
-    UserSerializer,
-    CourseSerializer,
-    EventSerializer,
-    LessonResourceSerializer,
-    LessonResourceBulkSerializer,
-    EmailVerificationSerializer,
-    ResendVerificationSerializer
-)
-from .permissions import IsAdmin
-from django.core.mail import send_mail
-from django.conf import settings
-from django.core.validators import validate_email
-from django.contrib.auth.password_validation import validate_password
-import re
-from django.http import FileResponse, Http404
-from wsgiref.util import FileWrapper
 import mimetypes
 import os
+import re
+from wsgiref.util import FileWrapper
+
+from django.conf import settings
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.password_validation import validate_password
+from django.core.mail import send_mail
+from django.core.validators import validate_email
+from django.db import transaction
+from django.forms import ValidationError
+from django.http import FileResponse, Http404
+from django.shortcuts import get_object_or_404
+
+from rest_framework import status, viewsets
+from rest_framework.authtoken.models import Token
+from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
+
+from .models import (
+    AppUser,
+    Course,
+    CourseProgress,
+    EmailVerificationToken,
+    Event,
+    Lesson,
+    LessonProgress,
+    LessonResource,
+)
+from .permissions import IsAdmin
+from .serializers import (
+    CourseProgressSerializer,
+    CourseSerializer,
+    EmailVerificationSerializer,
+    EventSerializer,
+    LessonResourceBulkSerializer,
+    LessonResourceSerializer,
+    LessonSerializer,
+    ResendVerificationSerializer,
+    UserSerializer,
+)
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = AppUser.objects.all()
@@ -90,7 +92,7 @@ class RegisterView(APIView):
         return password
 
     def validate_email_domain(self, email):
-        allowed_domains = ['torontomu.ca', 'gmail.com', 'outlook.com']  # Add allowed domains
+        allowed_domains = ['torontomu.ca', 'gmail.com', 'outlook.com']  
         domain = email.split('@')[1].lower()
         if domain not in allowed_domains:
             raise ValidationError(f"Please use an email address from one of these domains: {', '.join(allowed_domains)}")
@@ -202,11 +204,10 @@ class VerifyEmailView(APIView):
                 'email': user.email
             })
 
-            # Set cookie
             response.set_cookie(
                 'auth_token',
                 token.key,
-                max_age=60*60*24*7,    # 7 days
+                max_age=60*60*24*7,    
                 httponly=True,
                 samesite='Lax',
                 secure=False,           # False for development
@@ -430,7 +431,6 @@ class UpdateLessonProgressView(APIView):
         lesson_progress.completed = completed
         lesson_progress.save()
 
-        # Update course progress
         self.update_course_progress(user, lesson.course)
         return Response({"message": "Lesson progress updated successfully."}, 
                       status=status.HTTP_200_OK)
@@ -520,23 +520,18 @@ class ResourceDownloadView(APIView):
                     status=status.HTTP_404_NOT_FOUND
                 )
 
-            # Use resource title and original file extension for the filename
             original_extension = os.path.splitext(resource.file.name)[1]
             download_filename = f"{resource.title}{original_extension}"
             
-            # Sanitize filename to remove invalid characters
             download_filename = "".join(c for c in download_filename if c.isalnum() or c in (' ', '-', '_', '.'))
             
-            # Open the file and create response
             file_handle = open(file_path, 'rb')
             response = FileResponse(file_handle)
             
-            # Set content type
             content_type, encoding = mimetypes.guess_type(file_path)
             if content_type:
                 response['Content-Type'] = content_type
             
-            # Set Content-Disposition header with the sanitized filename
             response['Content-Disposition'] = f'attachment; filename="{download_filename}"'
             
             return response

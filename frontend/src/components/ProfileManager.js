@@ -41,12 +41,10 @@ const ProfileDialog = ({ open, onClose, userInfo }) => {
   };
 
   const handleSubmit = async () => {
-    // Reset messages
     setErrors({});
     setApiError('');
     setSuccess('');
 
-    // Validate fields
     let newErrors = {};
     if (!passwordData.currentPassword) {
       newErrors.currentPassword = 'Current password is required';

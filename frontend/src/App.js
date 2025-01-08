@@ -52,10 +52,8 @@ function App() {
     <Router>
       <Layout>
         <Routes>
-          {/* Change the home route to use HomeRedirect */}
           <Route path="/" element={<HomeRedirect />} />
           
-          {/* Rest of your routes remain the same */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           

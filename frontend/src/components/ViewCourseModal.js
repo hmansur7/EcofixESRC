@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   List,
-  ListItemIcon,
   ListItemText,
   ListItemButton,
   IconButton,
@@ -23,16 +22,14 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogActions,
   Divider,
+  CircularProgress,
 } from "@mui/material";
 import {
   KeyboardArrowDown,
   KeyboardArrowUp,
-  PlayCircle,
   Download,
   Close as CloseIcon,
-  OndemandVideo,
   Visibility,
 } from "@mui/icons-material";
 import {
@@ -235,7 +232,7 @@ const LessonListItem = ({
     try {
       await downloadResource(resource.id, resource.title);
     } catch (error) {
-      console.error("Error downloading file:", error);
+      console.error("Error downloading resource:", error);
     } finally {
       setDownloading(null);
     }
@@ -289,62 +286,98 @@ const LessonListItem = ({
           {loading ? (
             <Typography variant="body2">Loading resources...</Typography>
           ) : resources.length > 0 ? (
-            <TableContainer component={Paper} variant="outlined">
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Title</TableCell>
-                    <TableCell>Uploaded</TableCell>
-                    <TableCell>Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {resources.map((resource) => (
-                    <TableRow key={resource.id}>
-                      <TableCell>{resource.title}</TableCell>
-                      <TableCell>
-                        {new Date(resource.uploaded_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", gap: 1 }}>
-                          <Button
-                            startIcon={<Visibility />}
-                            onClick={() => onPreviewResource(resource)}
-                            size="small"
-                            variant="outlined"
-                            sx={{
-                              borderColor: "#14213d",
-                              color: "#14213d",
-                              "&:hover": {
-                                borderColor: "#fca311",
-                                backgroundColor: "rgba(252, 163, 17, 0.04)",
-                              },
-                            }}
-                          >
-                            Preview
-                          </Button>
-                          <Button
-                            startIcon={<Download />}
-                            onClick={(e) => handleDownload(resource, e)}
-                            disabled={downloading === resource.id}
-                            size="small"
-                            variant="contained"
-                            sx={{
-                              backgroundColor: "#14213d",
-                              "&:hover": { backgroundColor: "#fca311" },
-                            }}
-                          >
-                            {downloading === resource.id
-                              ? "Downloading..."
-                              : "Download"}
-                          </Button>
-                        </Box>
-                      </TableCell>
+            <Box sx={{ overflowX: "hidden" }}>
+              <TableContainer
+                component={Paper}
+                variant="outlined"
+                sx={{
+                  maxWidth: "100%",
+                  ".MuiTable-root": {
+                    tableLayout: "fixed",
+                  },
+                }}
+              >
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell width="40%">Title</TableCell>
+                      <TableCell width="25%">Uploaded</TableCell>
+                      <TableCell width="35%">Actions</TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
+                  </TableHead>
+                  <TableBody>
+                    {resources.map((resource) => (
+                      <TableRow key={resource.id}>
+                        <TableCell
+                          sx={{
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                          }}
+                        >
+                          {resource.title}
+                        </TableCell>
+                        <TableCell>
+                          {new Date(resource.uploaded_at).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                            }}
+                          >
+                            {/* Preview IconButton */}
+                            <IconButton
+                              onClick={() => onPreviewResource(resource)}
+                              size="small"
+                              sx={{
+                                color: "#14213d",
+                                border: "1px solid #14213d",
+                                borderRadius: "4px",
+                                p: "4px",
+                                "&:hover": {
+                                  borderColor: "#fca311",
+                                  backgroundColor: "rgba(252, 163, 17, 0.04)",
+                                },
+                              }}
+                            >
+                              <Visibility fontSize="small" />
+                            </IconButton>
+
+                            {/* Download IconButton */}
+                            <IconButton
+                              onClick={(e) => handleDownload(resource, e)}
+                              disabled={downloading === resource.id}
+                              size="small"
+                              sx={{
+                                backgroundColor: "#14213d",
+                                color: "white",
+                                borderRadius: "4px",
+                                p: "4px",
+                                "&:hover": {
+                                  backgroundColor: "#fca311",
+                                },
+                                "&.Mui-disabled": {
+                                  backgroundColor: "rgba(0, 0, 0, 0.12)",
+                                  color: "rgba(0, 0, 0, 0.26)",
+                                },
+                              }}
+                            >
+                              {downloading === resource.id ? (
+                                <CircularProgress size={20} color="inherit" />
+                              ) : (
+                                <Download fontSize="small" />
+                              )}
+                            </IconButton>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
           ) : (
             <Typography variant="body2">No resources available</Typography>
           )}
@@ -571,11 +604,6 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
           <Box sx={styles.contentArea}>{renderContent()}</Box>
         </Box>
       </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} sx={{ color: "#14213d" }}>
-          Close
-        </Button>
-      </DialogActions>
     </Dialog>
   );
 };

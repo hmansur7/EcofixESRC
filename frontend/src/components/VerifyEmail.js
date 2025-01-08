@@ -32,11 +32,10 @@ const VerifyEmail = () => {
             setLoading(true);
             const response = await verifyEmail(token);
             
-            // Store user data just like after login
             if (response.role) {
                 localStorage.setItem("userRole", response.role);
-                localStorage.setItem("userName", response.name);  // If name is returned
-                localStorage.setItem("userEmail", response.email);  // If email is returned
+                localStorage.setItem("userName", response.name);  
+                localStorage.setItem("userEmail", response.email);  
             }
             
             setStatus("success");

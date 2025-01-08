@@ -23,7 +23,7 @@ MEDIA_URL = '/lesson_resources/'
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-8fw96h=_&q69=by*ahwsn$@1+(kt*tves(nz!+kj$bzl#v)=+^'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -35,7 +35,6 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # Application definition
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -96,7 +95,6 @@ DATABASES = {
 }
 
 # User
-
 AUTH_USER_MODEL = 'content.AppUser'
 
 # Password validation
@@ -117,7 +115,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-# Email settings - Update these with your email provider settings
+# Email settings
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = config('EMAIL_HOST')
 EMAIL_PORT = config('EMAIL_PORT')

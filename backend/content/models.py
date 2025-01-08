@@ -120,7 +120,6 @@ class LessonResource(models.Model):
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='resources')
 
     def save(self, *args, **kwargs):
-        # Determine resource type before saving
         extension = self.file.name.split('.')[-1].lower()
         if extension in ['pdf', 'docx', 'pptx', 'xlsx']:
             self.resource_type = 'document'

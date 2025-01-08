@@ -157,7 +157,6 @@ export const downloadResource = async (resourceId, resourceTitle) => {
             responseType: 'blob'
         });
         
-        // Get filename from Content-Disposition header
         let filename = resourceTitle;
         const contentDisposition = response.headers['content-disposition'];
         if (contentDisposition) {
@@ -167,7 +166,6 @@ export const downloadResource = async (resourceId, resourceTitle) => {
             }
         }
         
-        // Create and trigger download
         const blob = new Blob([response.data], { 
             type: response.headers['content-type'] || 'application/octet-stream'
         });
@@ -178,7 +176,6 @@ export const downloadResource = async (resourceId, resourceTitle) => {
         document.body.appendChild(link);
         link.click();
         
-        // Cleanup
         document.body.removeChild(link);
         window.URL.revokeObjectURL(url);
         
