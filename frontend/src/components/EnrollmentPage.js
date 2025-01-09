@@ -1,5 +1,4 @@
-// EnrollmentPage.js
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -19,64 +18,14 @@ import {
   Grid,
   CircularProgress,
   Alert,
+  MenuItem,
+  TablePagination,
 } from "@mui/material";
 import { Search, AccessTime, Assignment } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { getAvailableCourses, enrollCourse } from "../services/api";
 
-const EnrollmentPage = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const navigate = useNavigate();
-
-  const [availableCourses, setAvailableCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCourse, setSelectedCourse] = useState(null);
-  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
-  const [enrolling, setEnrolling] = useState(false);
-
-  useEffect(() => {
-    fetchAvailableCourses();
-  }, []);
-
-  const fetchAvailableCourses = async () => {
-    try {
-      setLoading(true);
-      const data = await getAvailableCourses();
-      setAvailableCourses(data);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      setError("Failed to load available courses");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEnrollClick = (course) => {
-    setSelectedCourse(course);
-    setEnrollDialogOpen(true);
-  };
-
-  const handleEnrollConfirm = async () => {
-    try {
-      setEnrolling(true);
-      await enrollCourse(selectedCourse.course_id);
-      setEnrollDialogOpen(false);
-      navigate('/learning');
-    } catch (error) {
-      console.error("Error enrolling:", error);
-      setError(error.response?.data?.error || "Failed to enroll in course");
-    } finally {
-      setEnrolling(false);
-    }
-  };
-
-  const filteredCourses = availableCourses.filter((course) =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
+const CourseCard = ({ course, onEnrollClick }) => {
   const getLevelColor = (level) => {
     switch (level.toLowerCase()) {
       case 'beginner':
@@ -91,36 +40,7 @@ const EnrollmentPage = () => {
   };
 
   const styles = {
-    header: {
-      color: "#14213d",
-      fontWeight: "bold",
-      fontSize: isMobile ? "1.5rem" : "2rem",
-      marginBottom: isMobile ? "1rem" : 0,
-    },
-    wrapper: {
-      backgroundColor: "#f5f5f5",
-      borderRadius: "8px",
-      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-      padding: isMobile ? "1rem" : "2rem",
-    },
-    searchField: {
-    marginBottom: isMobile ? "1rem" : 0,
-      backgroundColor: "white",
-      borderRadius: "4px",
-      width: isMobile ? "100%" : "300px",
-      "& .MuiOutlinedInput-root": {
-        "& fieldset": {
-          borderColor: "#14213d",
-        },
-        "&:hover fieldset": {
-          borderColor: "#fca311",
-        },
-        "&.Mui-focused fieldset": {
-          borderColor: "#14213d",
-        },
-      },
-    },
-    courseCard: {
+    card: {
       height: "100%",
       display: "flex",
       flexDirection: "column",
@@ -139,23 +59,20 @@ const EnrollmentPage = () => {
       height: "100%",
       padding: "1.5rem",
     },
-    levelChip: (level) => {
-      const colors = getLevelColor(level);
-      return {
-        backgroundColor: colors.bg,
-        color: colors.text,
-        fontWeight: "medium",
-        fontSize: "0.875rem",
-      };
+    levelChip: {
+      backgroundColor: getLevelColor(course.level).bg,
+      color: getLevelColor(course.level).text,
+      fontWeight: "medium",
+      fontSize: "0.875rem",
     },
   };
 
-  const CourseCard = ({ course }) => (
-    <Card sx={styles.courseCard}>
+  return (
+    <Card sx={styles.card}>
       <CardContent sx={styles.cardContent}>        
         <Chip
           label={course.level}
-          sx={styles.levelChip(course.level)}
+          sx={styles.levelChip}
         />
 
         <Typography 
@@ -197,7 +114,7 @@ const EnrollmentPage = () => {
         <Button
           variant="contained"
           fullWidth
-          onClick={() => handleEnrollClick(course)}
+          onClick={() => onEnrollClick(course)}
           sx={{
             mt: "auto",
             backgroundColor: "#14213d",
@@ -210,6 +127,170 @@ const EnrollmentPage = () => {
       </CardContent>
     </Card>
   );
+};
+
+const EnrollmentPage = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const navigate = useNavigate();
+
+  const [availableCourses, setAvailableCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedCourse, setSelectedCourse] = useState(null);
+  const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  
+  // Pagination and filter states
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [levelFilter, setLevelFilter] = useState("All");
+
+  useEffect(() => {
+    fetchAvailableCourses();
+  }, []);
+
+  const fetchAvailableCourses = async () => {
+    try {
+      setLoading(true);
+      const data = await getAvailableCourses();
+      setAvailableCourses(data);
+      setFilteredCourses(data);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setError("Failed to load available courses");
+      setAvailableCourses([]);
+      setFilteredCourses([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterCourses = useCallback(() => {
+    let filtered = [...availableCourses];
+    
+    if (searchTerm) {
+      filtered = filtered.filter(course =>
+        course.title.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    
+    if (levelFilter !== "All") {
+      filtered = filtered.filter(course => 
+        course.level.toLowerCase() === levelFilter.toLowerCase()
+      );
+    }
+    
+    setFilteredCourses(filtered);
+    setPage(0);
+  }, [availableCourses, searchTerm, levelFilter]);
+
+  useEffect(() => {
+    filterCourses();
+  }, [filterCourses]);
+
+  const handleEnrollClick = (course) => {
+    setSelectedCourse(course);
+    setEnrollDialogOpen(true);
+  };
+
+  const handleEnrollConfirm = async () => {
+    try {
+      setEnrolling(true);
+      await enrollCourse(selectedCourse.course_id);
+      setEnrollDialogOpen(false);
+      navigate('/learning');
+    } catch (error) {
+      console.error("Error enrolling:", error);
+      setError(error.response?.data?.error || "Failed to enroll in course");
+    } finally {
+      setEnrolling(false);
+    }
+  };
+
+  const handlePageChange = (event, newPage) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleRowsPerPageChange = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleLevelChange = (event) => {
+    setLevelFilter(event.target.value);
+  };
+
+  const styles = {
+    wrapper: {
+      backgroundColor: "#f5f5f5",
+      borderRadius: "8px",
+      boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+      padding: isMobile ? "1rem" : "2rem",
+    },
+    header: {
+      color: "#14213d",
+      fontWeight: "bold",
+      fontSize: isMobile ? "1.5rem" : "2rem",
+      marginBottom: isMobile ? "1rem" : 0,
+    },
+    filterContainer: {
+      display: "flex",
+      gap: 2,
+      mb: 3,
+      flexDirection: isMobile ? "column" : "row",
+      alignItems: isMobile ? "stretch" : "center",
+    },
+    searchField: {
+      backgroundColor: "white",
+      borderRadius: "4px",
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+          borderColor: "#14213d",
+        },
+        "&:hover fieldset": {
+          borderColor: "#fca311",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: "#14213d",
+        },
+      },
+    },
+    levelSelect: {
+      minWidth: 200,
+      backgroundColor: "white",
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+          borderColor: "#14213d",
+        },
+        "&:hover fieldset": {
+          borderColor: "#fca311",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: "#14213d",
+        },
+      },
+    },
+    pagination: {
+      backgroundColor: "#fca311",
+      ".MuiTablePagination-select": {
+        backgroundColor: "white",
+        borderRadius: "4px",
+      },
+      ".MuiTablePagination-selectIcon": {
+        color: "#14213d",
+      },
+      "& .MuiButtonBase-root": {
+        color: "#14213d",
+        "&.Mui-disabled": {
+          color: "rgba(0, 0, 0, 0.26)",
+        },
+      },
+    },
+  };
 
   return (
     <Container maxWidth="xl">
@@ -225,6 +306,9 @@ const EnrollmentPage = () => {
             <Typography variant="h1" sx={styles.header}>
               Available Courses
             </Typography>
+          </Box>
+
+          <Box sx={styles.filterContainer}>
             <TextField
               placeholder="Search courses..."
               variant="outlined"
@@ -240,6 +324,19 @@ const EnrollmentPage = () => {
                 ),
               }}
             />
+            <TextField
+              select
+              size="small"
+              label="Difficulty Level"
+              value={levelFilter}
+              onChange={handleLevelChange}
+              sx={styles.levelSelect}
+            >
+              <MenuItem value="All">All Levels</MenuItem>
+              <MenuItem value="beginner">Beginner</MenuItem>
+              <MenuItem value="intermediate">Intermediate</MenuItem>
+              <MenuItem value="advanced">Advanced</MenuItem>
+            </TextField>
           </Box>
 
           {loading ? (
@@ -249,21 +346,59 @@ const EnrollmentPage = () => {
           ) : error ? (
             <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
           ) : (
-            <Grid container spacing={3}>
-              {filteredCourses.length > 0 ? (
-                filteredCourses.map((course) => (
-                  <Grid item xs={12} sm={6} md={4} key={course.course_id}>
-                    <CourseCard course={course} />
+            <>
+              <Grid container spacing={3}>
+                {filteredCourses
+                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                  .map((course) => (
+                    <Grid item xs={12} sm={6} md={4} key={course.course_id}>
+                      <CourseCard 
+                        course={course} 
+                        onEnrollClick={handleEnrollClick}
+                      />
+                    </Grid>
+                  ))
+                }
+                {filteredCourses.length === 0 && (
+                  <Grid item xs={12}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        py: 8,
+                        px: 2,
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
+                        No courses found
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                        Try adjusting your search or filter criteria.
+                      </Typography>
+                    </Box>
                   </Grid>
-                ))
-              ) : (
-                <Grid item xs={12}>
-                  <Typography align="center" sx={{ mt: 2 }}>
-                    No courses found matching your search.
-                  </Typography>
-                </Grid>
+                )}
+              </Grid>
+
+              {filteredCourses.length > 0 && (
+                <Box sx={{ mt: 3 }}>
+                  <TablePagination
+                    component="div"
+                    count={filteredCourses.length}
+                    page={page}
+                    onPageChange={handlePageChange}
+                    rowsPerPage={rowsPerPage}
+                    onRowsPerPageChange={handleRowsPerPageChange}
+                    rowsPerPageOptions={[6, 12, 24]}
+                    sx={styles.pagination}
+                  />
+                </Box>
               )}
-            </Grid>
+            </>
           )}
         </Card>
 
