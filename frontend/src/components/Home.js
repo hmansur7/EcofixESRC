@@ -1,15 +1,13 @@
 import { Box, Typography, Grid, Button, Container, Paper, useTheme, useMediaQuery } from '@mui/material';
-import { Login, PersonAdd, School, Public, MenuBook, Groups } from '@mui/icons-material';
+import { Login, PersonAdd, Public, MenuBook, Groups } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
 
   const features = [
-    { icon: School, title: 'Expert Professors' },
     { icon: MenuBook, title: 'Quality Content' },
     { icon: Public, title: 'Free Access' },
     { icon: Groups, title: 'Global Reach' },

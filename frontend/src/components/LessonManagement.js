@@ -248,7 +248,6 @@ const LessonManagement = ({ open, onClose, course }) => {
                 Add Resource
               </Button>
             </Box>
-
             <div
               style={{
                 display: "flex",
@@ -269,12 +268,7 @@ const LessonManagement = ({ open, onClose, course }) => {
 
               <Button
                 onClick={onClose}
-                variant="contained"
-                sx={{
-                  backgroundColor: "darkred",
-                  color: "white",
-                  "&:hover": { backgroundColor: "red" },
-                }}
+                variant="text"
               >
                 Close
               </Button>

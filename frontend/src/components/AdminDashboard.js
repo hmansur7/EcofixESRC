@@ -19,7 +19,6 @@ import {
 import { Delete, Logout } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import {
-  getAdminUsers,
   getAdminCourses,
   addAdminCourse,
   removeAdminCourse,
@@ -31,7 +30,6 @@ import {
 import LessonManagement from "./LessonManagement";
 
 const AdminDashboard = () => {
-  const [users, setUsers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [events, setEvents] = useState([]);
   const [newCourse, setNewCourse] = useState({ title: "", description: "" });
@@ -48,14 +46,6 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
 
   const fetchData = async () => {
-    try {
-      const usersData = await getAdminUsers();
-      setUsers(usersData);
-    } catch (error) {
-      console.error("Error fetching users:", error);
-      setUsers([]);
-    }
-
     try {
       const coursesData = await getAdminCourses();
       setCourses(coursesData);
@@ -115,7 +105,6 @@ const AdminDashboard = () => {
     }
   };
 
-  
   const openLessonDialog = (course) => {
     setSelectedCourse(course);
     setIsLessonDialogOpen(true);
@@ -163,7 +152,7 @@ const AdminDashboard = () => {
         }}
       >
         <Typography variant="h4" sx={{ color: "white" }}>
-          Admin Dashboard
+          Instructor Panel
         </Typography>
         <Button
           variant="contained"
@@ -184,42 +173,6 @@ const AdminDashboard = () => {
         </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
-
-      <Card sx={{ mb: 3, ...styles.card }}>
-        <CardContent>
-          <Typography variant="h5" sx={styles.header}>
-            Registered Users
-          </Typography>
-          {users.length > 0 ? (
-            <TableContainer component={Paper} sx={{ mt: 2 }}>
-              <Table>
-                <TableHead>
-                  <TableRow>
-                    <TableCell sx={styles.tableHeader}>ID</TableCell>
-                    <TableCell sx={styles.tableHeader}>Name</TableCell>
-                    <TableCell sx={styles.tableHeader}>Email</TableCell>
-                    <TableCell sx={styles.tableHeader}>Role</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {users.map((user) => (
-                    <TableRow key={user.user_id}>
-                      <TableCell>{user.user_id}</TableCell>
-                      <TableCell>{user.name}</TableCell>
-                      <TableCell>{user.email}</TableCell>
-                      <TableCell>{user.role}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          ) : (
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              No registered users found.
-            </Typography>
-          )}
-        </CardContent>
-      </Card>
 
       <Card sx={{ mb: 3, ...styles.card }}>
         <CardContent>
@@ -267,7 +220,7 @@ const AdminDashboard = () => {
                     <TableCell>{course.description}</TableCell>
                     <TableCell>
                       <Button
-                        variant="outlined"
+                        variant="contained"
                         onClick={() => openLessonDialog(course)}
                         sx={{ ...styles.button, textTransform: "none" }}
                       >
