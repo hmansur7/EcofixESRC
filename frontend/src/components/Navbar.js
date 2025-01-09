@@ -20,10 +20,17 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/api";
-import { Logout, AccountCircle, Settings, Menu as MenuIcon } from "@mui/icons-material";
+import { 
+  Logout, 
+  AccountCircle, 
+  Settings, 
+  Menu as MenuIcon,
+  PersonOutline,
+  AdminPanelSettings
+} from "@mui/icons-material";
 import ProfileDialog from "./ProfileManager";
 
-const Navbar = ({ title, links }) => {
+const Navbar = ({ title, links, adminView = false }) => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -31,17 +38,20 @@ const Navbar = ({ title, links }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [viewMode, setViewMode] = useState('admin'); // 'admin' or 'student'
 
   const [userInfo, setUserInfo] = useState(() => ({
     name: localStorage.getItem("userName") || "User",
     email: localStorage.getItem("userEmail") || "",
+    role: localStorage.getItem("userRole") || "",
   }));
 
   useEffect(() => {
     const name = localStorage.getItem("userName");
     const email = localStorage.getItem("userEmail");
-    if (name && email) {
-      setUserInfo({ name, email });
+    const role = localStorage.getItem("userRole");
+    if (name && email && role) {
+      setUserInfo({ name, email, role });
     }
   }, []);
 
@@ -74,9 +84,36 @@ const Navbar = ({ title, links }) => {
     setProfileOpen(true);
   };
 
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
+  const handleViewModeSwitch = () => {
+    // Check if user has admin privileges
+    const userRole = localStorage.getItem("userRole");
+    if (userRole !== "admin") {
+      return; // Early return if not admin
+    }
+
+    const newMode = viewMode === 'admin' ? 'student' : 'admin';
+    setViewMode(newMode);
+    handleClose();
+    setMobileMenuOpen(false);
+
+    // Store the current view mode in localStorage
+    localStorage.setItem("viewMode", newMode);
+
+    if (newMode === 'student') {
+      navigate('/learning');
+    } else {
+      navigate('/admin/dashboard');
+    }
   };
+
+  // Check initial view mode from localStorage
+  useEffect(() => {
+    const savedViewMode = localStorage.getItem("viewMode");
+    const userRole = localStorage.getItem("userRole");
+    if (savedViewMode && userRole === "admin") {
+      setViewMode(savedViewMode);
+    }
+  }, []);
 
   const MobileDrawer = () => (
     <Drawer
@@ -117,6 +154,25 @@ const Navbar = ({ title, links }) => {
             </ListItem>
           ))}
           <Divider sx={{ my: 1, bgcolor: 'rgba(255,255,255,0.12)' }} />
+          {adminView && (
+            <ListItem 
+              onClick={handleViewModeSwitch}
+              sx={{
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: 'rgb(252, 162, 17)',
+                },
+              }}
+            >
+              <ListItemIcon>
+                {viewMode === 'admin' ? 
+                  <PersonOutline sx={{ color: 'white' }} /> : 
+                  <AdminPanelSettings sx={{ color: 'white' }} />
+                }
+              </ListItemIcon>
+              <ListItemText primary={viewMode === 'admin' ? "View as Student" : "Back to Admin"} />
+            </ListItem>
+          )}
           <ListItem 
             onClick={handleProfileClick}
             sx={{
@@ -164,7 +220,7 @@ const Navbar = ({ title, links }) => {
             {title}
           </Typography>
           
-          {!isMobile ? (
+          {!isMobile && (
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {links.map((link) => (
                 <Button
@@ -221,6 +277,17 @@ const Navbar = ({ title, links }) => {
                   {userInfo.name}
                 </MenuItem>
                 <Divider />
+                {userInfo.role === "admin" && (
+                  <MenuItem onClick={handleViewModeSwitch}>
+                    <ListItemIcon>
+                      {viewMode === 'admin' ? 
+                        <PersonOutline fontSize="small" /> : 
+                        <AdminPanelSettings fontSize="small" />
+                      }
+                    </ListItemIcon>
+                    {viewMode === 'admin' ? "View as Student" : "Back to Admin"}
+                  </MenuItem>
+                )}
                 <MenuItem onClick={handleProfileClick}>
                   <ListItemIcon>
                     <Settings fontSize="small" />
@@ -235,11 +302,13 @@ const Navbar = ({ title, links }) => {
                 </MenuItem>
               </Menu>
             </Box>
-          ) : (
+          )}
+
+          {isMobile && (
             <IconButton
               color="inherit"
               aria-label="menu"
-              onClick={toggleMobileMenu}
+              onClick={() => setMobileMenuOpen(true)}
               edge="end"
             >
               <MenuIcon />
@@ -247,7 +316,6 @@ const Navbar = ({ title, links }) => {
           )}
         </Toolbar>
       </AppBar>
-
       <MobileDrawer />
 
       <ProfileDialog

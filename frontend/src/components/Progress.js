@@ -24,7 +24,7 @@ import {
   TablePagination,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
-import { getCourses, getCourseProgress } from "../services/api";
+import { getCourseProgress, getEnrolledCourses } from "../services/api";
 
 const ProgressDashboard = () => {
   const theme = useTheme();
@@ -48,7 +48,7 @@ const ProgressDashboard = () => {
 
   const fetchProgressData = async () => {
     try {
-      const coursesList = await getCourses();
+      const coursesList = await getEnrolledCourses();
       setCourses(coursesList);
 
       const progressMap = {};

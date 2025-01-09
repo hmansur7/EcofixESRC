@@ -29,6 +29,9 @@ from content.views import (
     LogoutView,
     ResourcePreviewView,
     ResourceDownloadView,
+    AvailableCoursesView,
+    EnrolledCoursesView,
+    EnrollCourseView,
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -57,12 +60,15 @@ urlpatterns = [
     path('api/lessons/<int:lesson_id>/resources/', LessonResourcesView.as_view(), name='lesson-resources'),
     path('api/resources/<int:resource_id>/preview/', ResourcePreviewView.as_view(), name='resource-preview'),
     path('api/resources/<int:resource_id>/download/',ResourceDownloadView.as_view(), name='resource-download'),
+    path('api/courses/available/', AvailableCoursesView.as_view(), name='available-courses'),
+    path('api/courses/enrolled/', EnrolledCoursesView.as_view(), name='enrolled-courses'),
+    path('api/courses/enroll/<int:course_id>/', EnrollCourseView.as_view(), name='enroll-course'),
 
     # Admin endpoints
     path('api/admin/users/', AdminUserListView.as_view(), name='admin-users'),
     path('api/admin/courses/', AdminListCoursesView.as_view(), name='admin-list-courses'),
     path('api/admin/courses/add/', AdminAddCourseView.as_view(), name='admin-add-course'),
-    path('api/admin/courses/<int:id>/', AdminRemoveCourseView.as_view(), name='admin-remove-course'),
+    path('api/admin/courses/remove/<int:course_id>/', AdminRemoveCourseView.as_view(), name='admin-remove-course'),
     path('api/admin/events/', AdminListEventsView.as_view(), name='admin-list-events'),
     path('api/admin/events/add/', AdminAddEventView.as_view(), name='admin-add-event'),
     path('api/admin/events/<int:event_id>/remove/', AdminRemoveEventView.as_view(), name='admin-remove-event'),

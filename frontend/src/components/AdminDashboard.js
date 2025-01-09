@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Typography,
   Card,
   CardContent,
+  CardHeader,
   Table,
   TableBody,
   TableCell,
@@ -14,66 +15,183 @@ import {
   Button,
   TextField,
   IconButton,
-  Divider,
+  MenuItem,
+  InputAdornment,
+  useTheme,
+  useMediaQuery,
+  TablePagination,
+  Container,
+  Collapse,
+  Tooltip,
 } from "@mui/material";
-import { Delete, Logout } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { Delete, Search, Add, ExpandLess } from "@mui/icons-material";
 import {
   getAdminCourses,
   addAdminCourse,
   removeAdminCourse,
-  getAdminEvents,
-  addAdminEvent,
-  removeAdminEvent,
-  logoutUser,
 } from "../services/api";
 import LessonManagement from "./LessonManagement";
 
+const TruncatedText = ({ text, maxLength = 100 }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  if (text.length <= maxLength) {
+    return <Typography variant="body2">{text}</Typography>;
+  }
+
+  return (
+    <Box sx={{ maxWidth: 400 }}>
+      <Typography
+        variant="body2"
+        sx={{
+          display: "inline",
+          wordBreak: "break-word",
+        }}
+      >
+        {isExpanded ? text : `${text.substring(0, maxLength)}...`}
+      </Typography>
+      <Button
+        size="small"
+        onClick={() => setIsExpanded(!isExpanded)}
+        sx={{
+          ml: 0.5,
+          minWidth: "auto",
+          p: "2px 4px",
+          fontSize: "0.75rem",
+          textTransform: "none",
+          color: "primary.main",
+          "&:hover": {
+            backgroundColor: "transparent",
+            textDecoration: "underline",
+          },
+        }}
+      >
+        {isExpanded ? "(less)" : "(more)"}
+      </Button>
+    </Box>
+  );
+};
+
+
 const AdminDashboard = () => {
-  const [courses, setCourses] = useState([]);
-  const [events, setEvents] = useState([]);
-  const [newCourse, setNewCourse] = useState({ title: "", description: "" });
-  const [newEvent, setNewEvent] = useState({
-    title: "",
-    description: "",
-    start_time: "",
-    end_time: "",
-  });
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   
+  const [courses, setCourses] = useState([]);
+  const [filteredCourses, setFilteredCourses] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [levelFilter, setLevelFilter] = useState("All");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(5);
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
-
-  const navigate = useNavigate();
-
-  const fetchData = async () => {
-    try {
-      const coursesData = await getAdminCourses();
-      setCourses(coursesData);
-    } catch (error) {
-      console.error("Error fetching courses:", error);
-      setCourses([]);
-    }
-
-    try {
-      const eventsData = await getAdminEvents();
-      setEvents(eventsData);
-    } catch (error) {
-      console.error("Error fetching events:", error);
-      setEvents([]);
-    }
-  };
+  const [errors, setErrors] = useState({});
+  const [showAddForm, setShowAddForm] = useState(false);
+  
+  const [newCourse, setNewCourse] = useState({
+    title: "",
+    description: "",
+    duration: "",
+    level: "Beginner",
+    prerequisites: "",
+  });
 
   useEffect(() => {
     fetchData();
   }, []);
 
-  const handleAddCourse = async () => {
+  const fetchData = async () => {
     try {
-      await addAdminCourse(newCourse);
-      setNewCourse({ title: "", description: "" });
+      const coursesData = await getAdminCourses();
+      setCourses(coursesData);
+      setFilteredCourses(coursesData);
+    } catch (error) {
+      console.error("Error fetching courses:", error);
+      setCourses([]);
+      setFilteredCourses([]);
+    }
+  };
+
+  const filterCourses = useCallback(() => {
+    let filtered = [...courses];
+
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (course) =>
+          course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          course.description.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    if (levelFilter !== "All") {
+      filtered = filtered.filter((course) => course.level === levelFilter);
+    }
+
+    setFilteredCourses(filtered);
+    setPage(0);
+  }, [courses, searchQuery, levelFilter]);
+
+  useEffect(() => {
+    filterCourses();
+  }, [filterCourses]);
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const validateDuration = (duration) => {
+    const pattern = /^\d+\s+(week|weeks|month|months)$/i;
+    return pattern.test(duration);
+  };
+
+  const handleAddCourse = async () => {
+    const newErrors = {};
+    
+    if (!newCourse.title.trim()) {
+      newErrors.title = "Title is required";
+    }
+    if (!newCourse.description.trim()) {
+      newErrors.description = "Description is required";
+    }
+    if (!newCourse.duration.trim()) {
+      newErrors.duration = "Duration is required";
+    } else if (!validateDuration(newCourse.duration)) {
+      newErrors.duration = "Duration must be in format: X week(s) or X month(s)";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    try {
+      const courseToAdd = {
+        ...newCourse,
+        prerequisites: newCourse.prerequisites.trim() || "None"
+      };
+
+      await addAdminCourse(courseToAdd);
+      setNewCourse({
+        title: "",
+        description: "",
+        duration: "",
+        level: "Beginner",
+        prerequisites: "",
+      });
+      setErrors({});
+      setShowAddForm(false);
       fetchData();
     } catch (error) {
-      console.error("Error adding course:", error);
+      if (error.response?.data) {
+        setErrors(error.response.data);
+      } else {
+        console.error("Error adding course:", error);
+      }
     }
   };
 
@@ -83,25 +201,6 @@ const AdminDashboard = () => {
       fetchData();
     } catch (error) {
       console.error("Error removing course:", error);
-    }
-  };
-
-  const handleAddEvent = async () => {
-    try {
-      await addAdminEvent(newEvent);
-      setNewEvent({ title: "", description: "", start_time: "", end_time: "" });
-      fetchData();
-    } catch (error) {
-      console.error("Error adding event:", error);
-    }
-  };
-
-  const handleRemoveEvent = async (eventId) => {
-    try {
-      await removeAdminEvent(eventId);
-      fetchData();
-    } catch (error) {
-      console.error("Error removing event:", error);
     }
   };
 
@@ -116,242 +215,301 @@ const AdminDashboard = () => {
   };
 
   const styles = {
-    header: {
-      color: "#14213d",
-      fontWeight: "bold",
+    mainContainer: {
+      pt: 3,  // Add padding top to account for navbar
+      pb: 3,
+      px: { xs: 2, sm: 3 }
     },
     card: {
       backgroundColor: "#f5f5f5",
       borderRadius: "8px",
       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-      padding: "1rem",
+    },
+    searchField: {
+      backgroundColor: "white",
+      borderRadius: "4px",
+      "& .MuiOutlinedInput-root": {
+        "& fieldset": {
+          borderColor: "#14213d",
+        },
+        "&:hover fieldset": {
+          borderColor: "#fca311",
+        },
+        "&.Mui-focused fieldset": {
+          borderColor: "#14213d",
+        },
+      },
+    },
+    button: {
+      backgroundColor: "#14213d",
+      color: "white",
+      "&:hover": {
+        backgroundColor: "#fca311",
+      },
     },
     tableHeader: {
       backgroundColor: "#14213d",
       color: "white",
       fontWeight: "bold",
     },
-    button: {
-      backgroundColor: "#14213d",
-      color: "white",
-      "&:hover": { backgroundColor: "#fca311" },
-    },
   };
 
   return (
-    <Box sx={{ padding: 3 }}>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          backgroundColor: "#14213d",
-          padding: 3,
-          margin: -3,
-          boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-        }}
-      >
-        <Typography variant="h4" sx={{ color: "white" }}>
-          Instructor Panel
-        </Typography>
-        <Button
-          variant="contained"
-          onClick={() => {
-            logoutUser();
-            navigate("/");
-          }}
-          sx={{
-            backgroundColor: "darkred",
-            color: "white",
-            "&:hover": { backgroundColor: "red" },
-            textTransform: "none",
-            fontWeight: "bold",
-          }}
-          startIcon={<Logout />}
-        >
-          Logout
-        </Button>
-      </Box>
-      <Divider sx={{ mb: 3 }} />
-
-      <Card sx={{ mb: 3, ...styles.card }}>
-        <CardContent>
-          <Typography variant="h5" sx={styles.header}>
-            Manage Courses
-          </Typography>
-          <TextField
-            label="Course Title"
-            fullWidth
-            value={newCourse.title}
-            onChange={(e) =>
-              setNewCourse({ ...newCourse, title: e.target.value })
+    <Container maxWidth="lg">
+      <Box sx={styles.mainContainer}>
+        <Card sx={styles.card}>
+          <CardHeader
+            title={
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="h5" sx={{ color: "#14213d", fontWeight: "bold" }}>
+                  Course Management
+                </Typography>
+                <Button
+                  variant="contained"
+                  startIcon={showAddForm ? <ExpandLess /> : <Add />}
+                  onClick={() => setShowAddForm(!showAddForm)}
+                  sx={styles.button}
+                >
+                  {showAddForm ? "Hide" : "Add New Course"}
+                </Button>
+              </Box>
             }
-            sx={{ mt: 2 }}
           />
-          <TextField
-            label="Course Description"
-            fullWidth
-            value={newCourse.description}
-            onChange={(e) =>
-              setNewCourse({ ...newCourse, description: e.target.value })
-            }
-            sx={{ mt: 2 }}
-          />
-          <Button
-            variant="contained"
-            onClick={handleAddCourse}
-            sx={{ mt: 2, ...styles.button }}
-          >
-            Add Course
-          </Button>
-          <TableContainer component={Paper} sx={{ mt: 2 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={styles.tableHeader}>Title</TableCell>
-                  <TableCell sx={styles.tableHeader}>Description</TableCell>
-                  <TableCell sx={styles.tableHeader}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {courses.map((course) => (
-                  <TableRow key={course.course_id}>
-                    <TableCell>{course.title}</TableCell>
-                    <TableCell>{course.description}</TableCell>
-                    <TableCell>
-                      <Button
-                        variant="contained"
-                        onClick={() => openLessonDialog(course)}
-                        sx={{ ...styles.button, textTransform: "none" }}
-                      >
-                        Manage Lessons
-                      </Button>
-                      <IconButton
-                        onClick={() => handleRemoveCourse(course.course_id)}
-                        sx={{ color: "red" }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
+          <CardContent>
+            <Collapse in={showAddForm}>
+              <Paper sx={{ p: 3, mb: 3, backgroundColor: "#f8f9fa" }}>
+                <Typography variant="h6" sx={{ mb: 2, color: "#14213d" }}>
+                  Add New Course
+                </Typography>
+                
+                <TextField
+                  label="Course Title"
+                  fullWidth
+                  value={newCourse.title}
+                  onChange={(e) => setNewCourse({ ...newCourse, title: e.target.value })}
+                  error={!!errors.title}
+                  helperText={errors.title}
+                  sx={{ mb: 2 }}
+                />
 
-      {selectedCourse && (
-        <LessonManagement
-          open={isLessonDialogOpen}
-          onClose={closeLessonDialog}
-          course={selectedCourse}
-        />
-      )}
+                <TextField
+                  label="Description"
+                  fullWidth
+                  multiline
+                  rows={4}
+                  value={newCourse.description}
+                  onChange={(e) => setNewCourse({ ...newCourse, description: e.target.value })}
+                  error={!!errors.description}
+                  helperText={errors.description}
+                  sx={{ mb: 2 }}
+                />
 
-      <Card sx={styles.card}>
-        <CardContent>
-          <Typography variant="h5" sx={styles.header}>
-            Manage Events
-          </Typography>
-          <Box component="form" sx={{ mt: 2 }}>
-            <TextField
-              label="Event Title"
-              fullWidth
-              value={newEvent.title}
-              onChange={(e) =>
-                setNewEvent({ ...newEvent, title: e.target.value })
-              }
-              sx={{ mt: 2 }}
-            />
-            <TextField
-              label="Event Description"
-              fullWidth
-              value={newEvent.description}
-              onChange={(e) =>
-                setNewEvent({ ...newEvent, description: e.target.value })
-              }
-              sx={{ mt: 2 }}
-            />
+                <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                  <TextField
+                    label="Duration"
+                    fullWidth
+                    value={newCourse.duration}
+                    onChange={(e) => setNewCourse({ ...newCourse, duration: e.target.value })}
+                    error={!!errors.duration}
+                    helperText={errors.duration || "Format: X week(s) or X month(s)"}
+                  />
+
+                  <TextField
+                    select
+                    label="Level"
+                    fullWidth
+                    value={newCourse.level}
+                    onChange={(e) => setNewCourse({ ...newCourse, level: e.target.value })}
+                  >
+                    <MenuItem value="Beginner">Beginner</MenuItem>
+                    <MenuItem value="Intermediate">Intermediate</MenuItem>
+                    <MenuItem value="Advanced">Advanced</MenuItem>
+                  </TextField>
+                </Box>
+
+                <TextField
+                  label="Prerequisites"
+                  fullWidth
+                  value={newCourse.prerequisites}
+                  onChange={(e) => setNewCourse({ ...newCourse, prerequisites: e.target.value })}
+                  helperText="Enter any prerequisites for this course (default is None)"
+                  sx={{ mb: 3 }}
+                />
+
+                <Button
+                  variant="contained"
+                  onClick={handleAddCourse}
+                  sx={styles.button}
+                >
+                  Add Course
+                </Button>
+              </Paper>
+            </Collapse>
+
             <Box
               sx={{
                 display: "flex",
+                flexDirection: isMobile ? "column" : "row",
                 gap: 2,
-                flexWrap: "wrap",
-                mt: 2,
+                mb: 3,
               }}
             >
               <TextField
-                label="Start Time"
-                type="datetime-local"
-                value={newEvent.start_time}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, start_time: e.target.value })
-                }
-                InputLabelProps={{
-                  shrink: true,
+                fullWidth
+                size="small"
+                placeholder="Search courses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                sx={styles.searchField}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search />
+                    </InputAdornment>
+                  ),
                 }}
-                sx={{ flex: 1 }}
               />
+
               <TextField
-                label="End Time"
-                type="datetime-local"
-                value={newEvent.end_time}
-                onChange={(e) =>
-                  setNewEvent({ ...newEvent, end_time: e.target.value })
-                }
-                InputLabelProps={{
-                  shrink: true,
+                select
+                size="small"
+                fullWidth={isMobile}
+                label="Filter by Level"
+                value={levelFilter}
+                onChange={(e) => setLevelFilter(e.target.value)}
+                sx={{
+                  ...styles.searchField,
+                  minWidth: isMobile ? "100%" : 200,
                 }}
-                sx={{ flex: 1 }}
-              />
+              >
+                <MenuItem value="All">All Levels</MenuItem>
+                <MenuItem value="Beginner">Beginner</MenuItem>
+                <MenuItem value="Intermediate">Intermediate</MenuItem>
+                <MenuItem value="Advanced">Advanced</MenuItem>
+              </TextField>
             </Box>
-            <Button
-              variant="contained"
-              onClick={handleAddEvent}
-              sx={{ mt: 3, ...styles.button }}
-            >
-              Add Event
-            </Button>
-          </Box>
-          <TableContainer component={Paper} sx={{ mt: 3 }}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell sx={styles.tableHeader}>Title</TableCell>
-                  <TableCell sx={styles.tableHeader}>Description</TableCell>
-                  <TableCell sx={styles.tableHeader}>Start Time</TableCell>
-                  <TableCell sx={styles.tableHeader}>End Time</TableCell>
-                  <TableCell sx={styles.tableHeader}>Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {events.map((event) => (
-                  <TableRow key={event.event_id}>
-                    <TableCell>{event.title}</TableCell>
-                    <TableCell>{event.description}</TableCell>
-                    <TableCell>
-                      {new Date(event.start_time).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      {new Date(event.end_time).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        onClick={() => handleRemoveEvent(event.event_id)}
-                        sx={{ color: "red" }}
-                      >
-                        <Delete />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        </CardContent>
-      </Card>
-    </Box>
+
+            <TableContainer>
+              {filteredCourses.length > 0 ? (
+                <Table size={isMobile ? "small" : "medium"}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={styles.tableHeader}>Title</TableCell>
+                      <TableCell sx={styles.tableHeader}>Description</TableCell>
+                      <TableCell sx={styles.tableHeader}>Level</TableCell>
+                      <TableCell sx={styles.tableHeader}>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {filteredCourses
+                      .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                      .map((course) => (
+                        <TableRow key={course.course_id}>
+                          <TableCell>{course.title}</TableCell>
+                          <TableCell>
+                            <TruncatedText text={course.description} />
+                          </TableCell>
+                          <TableCell>{course.level}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="contained"
+                              onClick={() => openLessonDialog(course)}
+                              sx={{
+                                ...styles.button,
+                                mr: 1,
+                              }}
+                              size="small"
+                            >
+                              Manage Lessons
+                            </Button>
+                            <Tooltip title="Delete Course">
+                              <IconButton
+                                onClick={() => handleRemoveCourse(course.course_id)}
+                                sx={{ color: "red" }}
+                                size="small"
+                              >
+                                <Delete />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    py: 8,
+                    px: 2,
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: 1,
+                  }}
+                >
+                  {courses.length === 0 ? (
+                    <>
+                      <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
+                        No courses available
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                        Click the "Add New Course" button above to get started.
+                      </Typography>
+                    </>
+                  ) : (
+                    <>
+                      <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
+                        No matching courses found
+                      </Typography>
+                      <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                        Try adjusting your search or filter criteria.
+                      </Typography>
+                    </>
+                  )}
+                </Box>
+              )}
+              {filteredCourses.length > 0 && (
+                <TablePagination
+                  rowsPerPageOptions={[5, 10, 25]}
+                  component="div"
+                  count={filteredCourses.length}
+                  rowsPerPage={rowsPerPage}
+                  page={page}
+                  onPageChange={handleChangePage}
+                  onRowsPerPageChange={handleChangeRowsPerPage}
+                  sx={{
+                    backgroundColor: "#fca311",
+                    ".MuiTablePagination-select": {
+                      backgroundColor: "white",
+                      borderRadius: "4px",
+                    },
+                    ".MuiTablePagination-selectIcon": {
+                      color: "#14213d",
+                    },
+                    "& .MuiButtonBase-root": {
+                      color: "#14213d",
+                      "&.Mui-disabled": {
+                        color: "rgba(0, 0, 0, 0.26)",
+                      },
+                    },
+                  }}
+                />
+              )}
+            </TableContainer>
+          </CardContent>
+        </Card>
+
+        {selectedCourse && (
+          <LessonManagement
+            open={isLessonDialogOpen}
+            onClose={closeLessonDialog}
+            course={selectedCourse}
+          />
+        )}
+      </Box>
+    </Container>
   );
 };
 

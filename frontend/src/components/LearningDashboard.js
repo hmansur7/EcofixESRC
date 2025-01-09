@@ -22,7 +22,7 @@ import {
   Container,
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
-import { getCourses } from "../services/api";
+import { getEnrolledCourses } from "../services/api";
 import ViewCourseModal from "./ViewCourseModal";
 
 const LearningDashboard = () => {
@@ -40,7 +40,7 @@ const LearningDashboard = () => {
   useEffect(() => {
     const fetchCourses = async () => {
       try {
-        const coursesData = await getCourses();
+        const coursesData = await getEnrolledCourses();
         setCourses(coursesData);
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -186,7 +186,7 @@ const LearningDashboard = () => {
                   mb: isMobile ? 1 : 0,
                 }}
               >
-                Available Courses
+                Your Courses
               </Typography>
               <TextField
                 placeholder="Search courses..."
@@ -258,7 +258,6 @@ const LearningDashboard = () => {
                   <TableHead>
                     <TableRow>
                       <TableCell sx={styles.tableHeader}>Course Title</TableCell>
-                      <TableCell sx={styles.tableHeader}>Description</TableCell>
                       <TableCell sx={styles.tableHeader} align="right">
                         Actions
                       </TableCell>
@@ -274,7 +273,6 @@ const LearningDashboard = () => {
                         .map((course) => (
                           <TableRow key={course.course_id}>
                             <TableCell>{course.title}</TableCell>
-                            <TableCell>{course.description}</TableCell>
                             <TableCell align="right">
                               <Button
                                 variant="contained"

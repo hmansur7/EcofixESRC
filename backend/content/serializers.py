@@ -1,10 +1,12 @@
 # serializers.py
 from rest_framework import serializers
+import re
 from .models import (
     CourseProgress,
     LessonProgress,
     Lesson,  
-    Course,  
+    Course,
+    Enrollment,  
     Event,   
     LessonResource,  
     AppUser
@@ -34,10 +36,86 @@ class EmailVerificationSerializer(serializers.Serializer):
 class ResendVerificationSerializer(serializers.Serializer):
     email = serializers.EmailField()
 
-class CourseSerializer(serializers.ModelSerializer):  
+class InstructorCourseSerializer(serializers.ModelSerializer):
+    instructor_name = serializers.SerializerMethodField()
+    
     class Meta:
-        model = Course  
-        fields = ['course_id', 'title', 'description']
+        model = Course
+        fields = [
+            'course_id', 
+            'title', 
+            'description', 
+            'duration', 
+            'level', 
+            'prerequisites',
+            'instructor_name',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['instructor_name', 'created_at', 'updated_at']
+    
+    def get_instructor_name(self, obj):
+        return obj.instructor.name
+    
+    def create(self, validated_data):
+        instructor = self.context['request'].user
+        validated_data['instructor'] = instructor
+        return super().create(validated_data)
+    
+class CourseSerializer(serializers.ModelSerializer):
+    instructor_name = serializers.SerializerMethodField()
+    
+    class Meta:
+        model = Course
+        fields = [
+            'course_id',
+            'title',
+            'description',
+            'duration',
+            'level',
+            'prerequisites',
+            'instructor_name',
+            'created_at',
+            'updated_at'
+        ]
+        read_only_fields = ['instructor_name', 'created_at', 'updated_at']
+    
+    def get_instructor_name(self, obj):
+        return obj.instructor.name if obj.instructor else None
+    
+    def validate(self, data):
+        request = self.context.get('request')
+        if request and getattr(request, 'user', None):
+            if request.user.role != 'admin':
+                raise serializers.ValidationError("Only admin users can create or modify courses.")
+        return data
+    
+    def validate_title(self, value):
+        if Course.objects.filter(title__iexact=value).exists():
+            raise serializers.ValidationError("A course with this title already exists")
+        return value
+    
+    def validate_duration(self, value):
+        duration_pattern = r'^\d+\s+(week|weeks|month|months)$'
+        if not re.match(duration_pattern, value.lower()):
+            raise serializers.ValidationError(
+                'Duration must be in format: "X week(s)" or "X month(s)"'
+            )
+        return value
+    
+    def create(self, validated_data):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['instructor'] = request.user
+        return super().create(validated_data)
+
+class EnrollmentSerializer(serializers.ModelSerializer):
+    course = CourseSerializer(read_only=True)
+    
+    class Meta:
+        model = Enrollment
+        fields = ['id', 'course', 'enrollment_date']
+        read_only_fields = ['enrollment_date']
 
 class EventSerializer(serializers.ModelSerializer):  
     class Meta:

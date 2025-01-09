@@ -9,6 +9,7 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.mail import send_mail
 from django.core.validators import validate_email
+from django.core.exceptions import PermissionDenied
 from django.db import transaction
 from django.forms import ValidationError
 from django.http import FileResponse, Http404
@@ -30,6 +31,7 @@ from .models import (
     Lesson,
     LessonProgress,
     LessonResource,
+    Enrollment,
 )
 from .permissions import IsAdmin
 from .serializers import (
@@ -42,6 +44,8 @@ from .serializers import (
     LessonSerializer,
     ResendVerificationSerializer,
     UserSerializer,
+    EnrollmentSerializer,
+    InstructorCourseSerializer,
 )
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -400,6 +404,68 @@ class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
 
+class EnrollCourseView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request, course_id):
+        try:
+            course = get_object_or_404(Course, course_id=course_id)
+            
+            if Enrollment.objects.filter(user=request.user, course=course).exists():
+                return Response(
+                    {"error": "You are already enrolled in this course"}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            enrollment = Enrollment.objects.create(
+                user=request.user,
+                course=course
+            )
+            
+            CourseProgress.objects.create(
+                user=request.user,
+                course=course,
+                progress_percentage=0.0
+            )
+            
+            return Response(
+                {"message": "Successfully enrolled in the course"},
+                status=status.HTTP_201_CREATED
+            )
+            
+        except Course.DoesNotExist:
+            return Response(
+                {"error": "Course not found"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+class EnrolledCoursesView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CourseSerializer
+    
+    def get_queryset(self):
+        return Course.objects.filter(
+            enrolled_users__user=self.request.user
+        ).order_by('title')
+
+class AvailableCoursesView(ListAPIView):
+    permission_classes = [IsAuthenticated]
+    serializer_class = CourseSerializer
+    
+    def get_queryset(self):
+        enrolled_courses = Enrollment.objects.filter(
+            user=self.request.user
+        ).values_list('course_id', flat=True)
+        
+        return Course.objects.exclude(
+            course_id__in=enrolled_courses
+        ).order_by('title')
+       
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
@@ -549,10 +615,32 @@ class AdminUserListView(ListAPIView):
     queryset = AppUser.objects.all()
     serializer_class = UserSerializer
 
+class AdminCourseViewSet(viewsets.ModelViewSet):
+    serializer_class = InstructorCourseSerializer
+    permission_classes = [IsAdmin]
+    
+    def get_queryset(self):
+        return Course.objects.filter(instructor=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(instructor=self.request.user)
+    
+    def perform_update(self, serializer):
+        if serializer.instance.instructor != self.request.user:
+            raise PermissionDenied("You can only update your own courses.")
+        serializer.save()
+    
+    def perform_destroy(self, instance):
+        if instance.instructor != self.request.user:
+            raise PermissionDenied("You can only delete your own courses.")
+        instance.delete()
+
 class AdminListCoursesView(ListAPIView):
     permission_classes = [IsAdmin]
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = InstructorCourseSerializer
+    
+    def get_queryset(self):
+        return Course.objects.filter(instructor=self.request.user)
 
 class AdminListEventsView(ListAPIView):
     permission_classes = [IsAdmin]
@@ -561,13 +649,18 @@ class AdminListEventsView(ListAPIView):
 
 class AdminAddCourseView(CreateAPIView):
     permission_classes = [IsAdmin]
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
+    serializer_class = InstructorCourseSerializer
+    
+    def perform_create(self, serializer):
+        serializer.save(instructor=self.request.user)
 
 class AdminRemoveCourseView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Course.objects.all()
-    lookup_field = 'id'
+    lookup_field = 'course_id'
+    
+    def get_queryset(self):
+        return Course.objects.filter(instructor=self.request.user)
 
 class AdminAddEventView(CreateAPIView):
     permission_classes = [IsAdmin]

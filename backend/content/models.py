@@ -7,10 +7,17 @@ from django.utils.translation import gettext_lazy as _
 from django.core.validators import FileExtensionValidator
 from django.utils import timezone
 import uuid
+import re
 
 USER_ROLES = [
     ('user', 'User'),
     ('admin', 'Admin'),
+]
+
+DIFFICULTY_LEVELS = [
+    ('Beginner', 'Beginner'),
+    ('Intermediate', 'Intermediate'),
+    ('Advanced', 'Advanced'),
 ]
 
 class UserManager(models.Manager):
@@ -47,7 +54,7 @@ class AppUser(AbstractBaseUser, PermissionsMixin):
     name = models.CharField(max_length=255, null=False, blank=False)
     email = models.EmailField(unique=True, null=False, blank=False)
     role = models.CharField(max_length=10, choices=USER_ROLES, default='user', null=False, blank=False)
-    
+
     objects = UserManager()
 
     USERNAME_FIELD = 'email'
@@ -80,11 +87,50 @@ class EmailVerificationToken(models.Model):
 class Course(models.Model):
     course_id = models.AutoField(primary_key=True, null=False, blank=False)
     title = models.CharField(max_length=255, null=False, blank=False, unique=True)
-    description = models.TextField(null=True, blank=True)
-
+    description = models.TextField(null=False, blank=False, unique=True)
+    duration = models.CharField(max_length=20, null=False, blank=False) 
+    level = models.CharField(max_length=20, choices=DIFFICULTY_LEVELS, default='Beginner')
+    prerequisites = models.CharField(max_length=255, null=True, blank=True)
+    instructor = models.ForeignKey(
+        AppUser, 
+        on_delete=models.CASCADE, 
+        related_name='created_courses',
+        limit_choices_to={'role': 'admin'}  
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+    
+    def clean(self):
+        if self.instructor and self.instructor.role != 'admin':
+            raise ValidationError('Only admin users can be course instructors.')
+            
+        duration_pattern = r'^\d+\s+(week|weeks|month|months)$'
+        if not re.match(duration_pattern, self.duration.lower()):
+            raise ValidationError({
+                'duration': 'Duration must be in format: "X week(s)" or "X month(s)"'
+            })
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+        
     def __str__(self):
         return self.title
 
+class Enrollment(models.Model):
+    user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name='enrollments')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrolled_users')
+    enrollment_date = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        unique_together = ['user', 'course']
+        
+    def __str__(self):
+        return f"{self.user.name} - {self.course.title}"
+    
 class Lesson(models.Model):
     lesson_id = models.AutoField(primary_key=True, null=False, blank=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')  

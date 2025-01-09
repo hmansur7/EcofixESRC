@@ -103,6 +103,20 @@ export const getCourses = async () => {
     return response.data;
 };
 
+export const getAvailableCourses = async () => {
+    const response = await API.get('courses/available/');
+    return response.data;
+};
+
+export const enrollCourse = async (courseId) => {
+    const response = await API.post(`courses/enroll/${courseId}/`);
+    return response.data;
+};
+
+export const getEnrolledCourses = async () => {
+    const response = await API.get('courses/enrolled/');
+    return response.data;  
+}
 export const getAdminCourses = async () => {
     const response = await API.get("admin/courses/");
     return response.data;
