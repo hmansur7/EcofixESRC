@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -19,6 +20,13 @@ import AdminDashboard from './components/Admin/AdminDashboard';
 import VerifyEmail from './components/VerifyEmail';
 import PrivateRoute from './middleware/Private';
 import AdminRoute from './middleware/Admin';
+
+if (process.env.NODE_ENV === 'production') {
+  const noop = () => {};
+  console.log = noop;
+  console.warn = noop;
+  console.error = noop;
+}
 
 const HomeRedirect = () => {
   const isAuthenticated = localStorage.getItem("userRole") && localStorage.getItem("userName");
