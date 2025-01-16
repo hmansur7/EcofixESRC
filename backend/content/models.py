@@ -86,19 +86,23 @@ class EmailVerificationToken(models.Model):
     
 class Course(models.Model):
     course_id = models.AutoField(primary_key=True, null=False, blank=False)
-    title = models.CharField(max_length=255, null=False, blank=False, unique=True)
-    description = models.TextField(null=False, blank=False, unique=True)
-    duration = models.CharField(max_length=20, null=False, blank=False) 
-    level = models.CharField(max_length=20, choices=DIFFICULTY_LEVELS, default='Beginner')
-    prerequisites = models.CharField(max_length=255, null=True, blank=True)
+    title = models.CharField(max_length=35, null=False, blank=False, db_index=True, unique=True)  
+    description = models.CharField(max_length=250, null=False, blank=False, db_index=False) 
+    duration = models.CharField(max_length=9, null=False, blank=False) 
+    level = models.CharField(max_length=12, choices=DIFFICULTY_LEVELS, default='Beginner')
+    prerequisites = models.CharField(max_length=50, null=True, blank=True, default='None')
     instructor = models.ForeignKey(
         AppUser, 
         on_delete=models.CASCADE, 
         related_name='created_courses',
         limit_choices_to={'role': 'admin'}  
     )
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(default=timezone.now, db_index=True)  
     updated_at = models.DateTimeField(auto_now=True)
+    
+    is_visible = models.BooleanField(default=False, db_index=True)  
+    visibility_start_date = models.DateTimeField(null=True, blank=True)
+    visibility_end_date = models.DateTimeField(null=True, blank=True)
     
     class Meta:
         ordering = ['-created_at']
@@ -112,13 +116,39 @@ class Course(models.Model):
             raise ValidationError({
                 'duration': 'Duration must be in format: "X week(s)" or "X month(s)"'
             })
+            
+        if self.visibility_start_date and self.visibility_end_date:
+            if self.visibility_end_date <= self.visibility_start_date:
+                raise ValidationError({
+                    'visibility_end_date': 'End date must be after start date'
+                })
     
     def save(self, *args, **kwargs):
         self.clean()
+        if self.visibility_start_date:
+            now = timezone.now()
+            if self.visibility_end_date:
+                self.is_visible = (
+                    self.visibility_start_date <= now <= self.visibility_end_date
+                )
+            else:
+                self.is_visible = self.visibility_start_date <= now
         super().save(*args, **kwargs)
         
     def __str__(self):
         return self.title
+
+    @property
+    def visibility_status(self):
+        if not self.is_visible:
+            return 'Hidden'
+        if self.visibility_start_date:
+            now = timezone.now()
+            if now < self.visibility_start_date:
+                return 'Scheduled'
+            if self.visibility_end_date and now > self.visibility_end_date:
+                return 'Expired'
+        return 'Visible'
 
 class Enrollment(models.Model):
     user = models.ForeignKey(AppUser, on_delete=models.CASCADE, related_name='enrollments')
@@ -134,8 +164,8 @@ class Enrollment(models.Model):
 class Lesson(models.Model):
     lesson_id = models.AutoField(primary_key=True, null=False, blank=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='lessons')  
-    title = models.CharField(max_length=255, null=False, blank=False)
-    description = models.TextField(null=True, blank=True)    
+    title = models.CharField(max_length=35, null=False, blank=False)
+    description = models.TextField(max_length=250,null=True, blank=True)    
     order = models.PositiveIntegerField(default=0, null=False, blank=False)  
 
     def __str__(self):
@@ -149,11 +179,11 @@ class LessonResource(models.Model):
         ('other', 'Other')
     ]
     
-    title = models.CharField(max_length=100, null=False, blank=False)
+    title = models.CharField(max_length=35, null=False, blank=False)
     file = models.FileField(
         upload_to='lesson_resources/', 
         validators=[FileExtensionValidator(
-            allowed_extensions=['pdf', 'mp4', 'webm', 'jpg', 'jpeg', 'png', 'docx', 'pptx', 'xlsx']
+            allowed_extensions=['pdf', 'jpg', 'jpeg', 'png', 'docx', 'pptx']
         )]
     )
     resource_type = models.CharField(
@@ -167,10 +197,8 @@ class LessonResource(models.Model):
 
     def save(self, *args, **kwargs):
         extension = self.file.name.split('.')[-1].lower()
-        if extension in ['pdf', 'docx', 'pptx', 'xlsx']:
+        if extension in ['pdf', 'docx', 'pptx']:
             self.resource_type = 'document'
-        elif extension in ['mp4', 'webm']:
-            self.resource_type = 'video'
         elif extension in ['jpg', 'jpeg', 'png']:
             self.resource_type = 'image'
         else:
@@ -210,4 +238,3 @@ class Event(models.Model):
 
     def __str__(self):
         return f"{self.title} on {self.start_time.strftime('%Y-%m-%d %H:%M:%S')}"
-

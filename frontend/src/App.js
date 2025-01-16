@@ -15,7 +15,7 @@ import HomePage from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import NotFound from './components/Notfound';
-import AdminDashboard from './components/AdminDashboard';
+import AdminDashboard from './components/Admin/AdminDashboard';
 import VerifyEmail from './components/VerifyEmail';
 import PrivateRoute from './middleware/Private';
 import AdminRoute from './middleware/Admin';
@@ -37,7 +37,7 @@ const HomeRedirect = () => {
 function App() {
   const userNavbarLinks = [
     { label: "Enroll", path: "/enroll" },
-    { label: "Learning", path: "/learning" },
+    { label: "My Courses", path: "/learning" },
     { label: "Progress", path: "/progress" },
   ];
 
@@ -79,7 +79,7 @@ function App() {
     return (
       <>
         <Navbar 
-          title={isAdmin ? "Admin Dashboard" : "Learning Dashboard"}
+          title={isAdmin ? "Instructor Dashboard" : "Learning Dashboard"}
           links={isAdmin ? adminNavbarLinks : userNavbarLinks}
           adminView={userRole === "admin"}
         />

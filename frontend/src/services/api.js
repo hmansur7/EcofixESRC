@@ -1,9 +1,10 @@
 // frontend/src/services/api.js
 import axios from "axios";
+import { clearAuthData, setAuthData } from '../utils/auth';
 
 
 const API = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/',  
+    baseURL: process.env.REACT_APP_API_URL, 
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
@@ -13,6 +14,7 @@ const API = axios.create({
 
 export const loginUser = async (email, password) => {
     try {
+        clearAuthData();
         const response = await API.post("auth/login/", { email, password });        
         if (response.data) {
             localStorage.setItem("userName", response.data.name);
@@ -34,11 +36,17 @@ export const registerUser = async (name, email, password) => {
 };
 
 export const verifyEmail = async (token) => {
-    const response = await API.post("auth/verify-email/", { token });
-    if (response.data.role) {
-        localStorage.setItem("userRole", response.data.role);
+    try {
+        const response = await API.post("auth/verify-email/", { token });
+        if (response.data) {
+            clearAuthData(); 
+            setAuthData(response.data);
+        }
+        return response.data;
+    } catch (error) {
+        clearAuthData();
+        throw error;
     }
-    return response.data;
 };
 
 export const resendVerificationEmail = async (email) => {
@@ -62,18 +70,10 @@ export const changePassword = async (currentPassword, newPassword) => {
 export const logoutUser = async () => {
     try {
         await API.post("auth/logout/");
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("pendingVerification");
-        
+        clearAuthData(); 
         window.location.href = '/';
     } catch (error) {
-        console.error("Logout failed:", error);
-        localStorage.removeItem("userRole");
-        localStorage.removeItem("userName");
-        localStorage.removeItem("userEmail");
-        localStorage.removeItem("pendingVerification");
+        clearAuthData(); 
         window.location.href = '/';
     }
 };
@@ -118,18 +118,65 @@ export const getEnrolledCourses = async () => {
     return response.data;  
 }
 export const getAdminCourses = async () => {
-    const response = await API.get("admin/courses/");
+    try {
+      const response = await API.get("admin/courses/");
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+export const addAdminCourse = async (courseData) => {
+    const formattedData = {
+        ...courseData,
+        visibility_start_date: courseData.visibility_start_date 
+            ? new Date(courseData.visibility_start_date).toISOString()
+            : null,
+        visibility_end_date: courseData.visibility_end_date
+            ? new Date(courseData.visibility_end_date).toISOString()
+            : null,
+    };
+    
+    const response = await API.post("admin/courses/add/", formattedData);
     return response.data;
 };
 
-export const addAdminCourse = async (courseData) => {
-    const response = await API.post("admin/courses/add/", courseData);
-    return response.data;
+
+export const updateCourseVisibility = async (courseId, visibilityData) => {
+    try {
+        const response = await API.patch(
+            `admin/courses/${courseId}/visibility/`, 
+            visibilityData
+        );
+        return response.data;
+    } catch (error) {
+        throw error.response?.data || error;
+    }
 };
 
 export const removeAdminCourse = async (courseId) => {
     const response = await API.delete(`admin/courses/remove/${courseId}/`);
     return response.data;
+};
+
+export const updateAdminCourse = async (courseId, courseData) => {
+    const formattedData = {
+        ...courseData,
+        visibility_start_date: courseData.visibility_start_date 
+            ? new Date(courseData.visibility_start_date).toISOString()
+            : null,
+        visibility_end_date: courseData.visibility_end_date
+            ? new Date(courseData.visibility_end_date).toISOString()
+            : null,
+    };
+    
+    try {
+        const response = await API.patch(`admin/courses/${courseId}/update/`, formattedData);
+        return response.data;
+    } catch (error) {
+        const errorMessage = error.response?.data?.error || 'Failed to update course';
+        throw new Error(errorMessage);
+    }
 };
 
 export const getAdminUsers = async () => {
@@ -164,7 +211,6 @@ export const getResourcePreview = async (resourceId) => {
     return response.data;
 };
 
-
 export const downloadResource = async (resourceId, resourceTitle) => {
     try {
         const response = await API.get(`resources/${resourceId}/download/`, {
@@ -194,7 +240,6 @@ export const downloadResource = async (resourceId, resourceTitle) => {
         window.URL.revokeObjectURL(url);
         
     } catch (error) {
-        console.error('Download error:', error);
         throw error;
     }
 };

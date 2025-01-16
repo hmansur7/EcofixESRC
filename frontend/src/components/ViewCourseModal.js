@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   List,
-  ListItemText,
   ListItemButton,
   IconButton,
   useTheme,
@@ -24,6 +23,7 @@ import {
   DialogTitle,
   Divider,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import {
   KeyboardArrowDown,
@@ -31,6 +31,7 @@ import {
   Download,
   Close as CloseIcon,
   Visibility,
+  MoreHoriz as MoreHorizIcon,
 } from "@mui/icons-material";
 import {
   getLessonsForCourse,
@@ -39,60 +40,26 @@ import {
   getResourcePreview,
   downloadResource,
 } from "../services/api";
-import API from "../services/api";
 
 const PreviewContent = ({ resource }) => {
   const [content, setContent] = useState(null);
   const [error, setError] = useState(null);
-  const videoRef = useRef(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     const loadPreview = async () => {
       try {
-        const fileExtension = resource.file.toLowerCase().split(".").pop();
-
-        if (fileExtension === "mp4") {
-          const token = localStorage.getItem("authToken");
-          console.log("Token being used:", token); // Debug log
-          const streamUrl = `${API.defaults.baseURL}resources/${resource.id}/stream/`;
-          const urlWithAuth = `${streamUrl}?auth=${token}`;
-          console.log("Full URL:", urlWithAuth); // Debug log
-
-          setContent(
-            <Box
-              sx={{
-                width: "100%",
-                height: "100%",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                bgcolor: "#000",
-              }}
-            >
-              <video
-                ref={videoRef}
-                controls
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "100%",
-                  width: "auto",
-                  height: "auto",
-                }}
-                controlsList="nodownload"
-                onContextMenu={(e) => e.preventDefault()}
-              >
-                <source src={urlWithAuth} type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </Box>
-          );
-          return;
-        }
-
         const blob = await getResourcePreview(resource.id);
         const blobUrl = URL.createObjectURL(blob);
+        const fileExtension = resource.file.toLowerCase().split(".").pop();
         const mimeType = blob.type;
 
+        if (isMobile) {
+          window.open(blobUrl, '_blank');
+          return;
+        }
+        
         if (fileExtension === "pdf" || mimeType === "application/pdf") {
           setContent(
             <iframe
@@ -102,7 +69,7 @@ const PreviewContent = ({ resource }) => {
             />
           );
         } else if (
-          fileExtension.match(/^(jpg|jpeg|png|gif)$/) ||
+          fileExtension.match(/^(jpg|jpeg|png)$/) ||
           mimeType.startsWith("image/")
         ) {
           setContent(
@@ -116,24 +83,6 @@ const PreviewContent = ({ resource }) => {
               }}
             />
           );
-        } else if (
-          fileExtension.match(/^(txt|md)$/) ||
-          mimeType === "text/plain"
-        ) {
-          const text = await new Response(blob).text();
-          setContent(
-            <pre
-              style={{
-                padding: "1rem",
-                whiteSpace: "pre-wrap",
-                wordWrap: "break-word",
-                maxWidth: "100%",
-                overflow: "auto",
-              }}
-            >
-              {text}
-            </pre>
-          );
         } else {
           setError(
             <Box sx={{ textAlign: "center" }}>
@@ -142,7 +91,6 @@ const PreviewContent = ({ resource }) => {
               </Typography>
               <Typography>
                 File type: {fileExtension.toUpperCase()}
-                {mimeType && ` (${mimeType})`}
               </Typography>
               <Typography variant="body2" sx={{ mt: 2 }}>
                 You can download this file to view it.
@@ -157,11 +105,6 @@ const PreviewContent = ({ resource }) => {
             <Typography variant="h6" gutterBottom color="error">
               Failed to load preview
             </Typography>
-            <Typography>
-              {err.response?.status === 403
-                ? "You don't have access to this resource"
-                : err.response?.data?.detail || err.message}
-            </Typography>
           </Box>
         );
       }
@@ -170,14 +113,6 @@ const PreviewContent = ({ resource }) => {
     if (resource) {
       loadPreview();
     }
-
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = "";
-        videoRef.current.load();
-      }
-    };
   }, [resource]);
 
   if (error) {
@@ -223,6 +158,19 @@ const LessonListItem = ({
   const [resources, setResources] = useState([]);
   const [loading, setLoading] = useState(false);
   const [downloading, setDownloading] = useState(null);
+  const [expanded, setExpanded] = useState(false);
+  const descriptionRef = useRef(null);
+  const [isMultiline, setIsMultiline] = useState(false);
+
+  useEffect(() => {
+    if (descriptionRef.current) {
+      const lineHeight = parseInt(
+        window.getComputedStyle(descriptionRef.current).lineHeight
+      );
+      const height = descriptionRef.current.offsetHeight;
+      setIsMultiline(height > lineHeight * 1.5);
+    }
+  }, [lesson.description]);
 
   const handleDownload = async (resource, event) => {
     event.stopPropagation();
@@ -254,24 +202,91 @@ const LessonListItem = ({
     setOpen(!open);
   };
 
+  const toggleDescription = (e) => {
+    e.stopPropagation();
+    setExpanded(!expanded);
+  };
+
   return (
-    <>
+    <Box sx={{ borderBottom: "1px solid rgba(0, 0, 0, 0.12)" }}>
       <ListItemButton
         selected={selectedLesson?.lesson_id === lesson.lesson_id}
         onClick={() => onLessonSelect(lesson)}
+        sx={{
+          display: "flex",
+          alignItems: "flex-start",
+          py: 2,
+          pr: 1,
+        }}
       >
-        <ListItemText primary={lesson.title} secondary={lesson.description} />
-        <Checkbox
-          checked={lesson.completed}
-          onChange={(e) => {
-            e.stopPropagation();
-            onCompletionChange(lesson.lesson_id, e.target.checked);
-          }}
-          onClick={(e) => e.stopPropagation()}
-        />
-        <IconButton size="small" onClick={fetchResources}>
-          {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
-        </IconButton>
+        <Box sx={{ flex: 1, minWidth: 0, pr: 2 }}>
+          <Typography
+            variant="subtitle1"
+            sx={{
+              display: 'block',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {lesson.title}
+          </Typography>
+          <Box sx={{ position: "relative", mt: 0.5 }}>
+            <Typography
+              ref={descriptionRef}
+              component="div"
+              variant="body2"
+              sx={{
+                display: "block",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxHeight: expanded ? "none" : "1.5em",
+                lineHeight: "1.5em",
+                transition: "max-height 0.2s ease-out",
+              }}
+            >
+              {lesson.description}
+            </Typography>
+            {isMultiline && (
+              <Button
+                size="small"
+                onClick={toggleDescription}
+                startIcon={<MoreHorizIcon />}
+                sx={{
+                  minWidth: "auto",
+                  padding: "2px 8px",
+                  mt: 0.5,
+                  color: "text.secondary",
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.04)",
+                  },
+                }}
+              >
+                {expanded ? "Show less" : "Show more"}
+              </Button>
+            )}
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", flexShrink: 0 }}>
+          <Tooltip
+            title={lesson.completed ? "Mark as incomplete" : "Mark as completed"}
+            placement="top"
+            arrow
+          >
+            <Checkbox
+              checked={lesson.completed}
+              onChange={(e) => {
+                e.stopPropagation();
+                onCompletionChange(lesson.lesson_id, e.target.checked);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              sx={{ p: 1 }}
+            />
+          </Tooltip>
+          <IconButton size="small" onClick={fetchResources} sx={{ ml: -0.5 }}>
+            {open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+          </IconButton>
+        </Box>
       </ListItemButton>
 
       <Collapse in={open} timeout="auto" unmountOnExit>
@@ -286,48 +301,41 @@ const LessonListItem = ({
           {loading ? (
             <Typography variant="body2">Loading resources...</Typography>
           ) : resources.length > 0 ? (
-            <Box sx={{ overflowX: "hidden" }}>
-              <TableContainer
-                component={Paper}
-                variant="outlined"
-                sx={{
-                  maxWidth: "100%",
-                  ".MuiTable-root": {
-                    tableLayout: "fixed",
-                  },
-                }}
-              >
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell width="40%">Title</TableCell>
-                      <TableCell width="25%">Uploaded</TableCell>
-                      <TableCell width="35%">Actions</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {resources.map((resource) => (
-                      <TableRow key={resource.id}>
-                        <TableCell
-                          sx={{
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                          }}
-                        >
-                          {resource.title}
-                        </TableCell>
-                        <TableCell>
-                          {new Date(resource.uploaded_at).toLocaleDateString()}
-                        </TableCell>
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              gap: 1,
-                            }}
-                          >
-                            {/* Preview IconButton */}
+            <TableContainer
+              component={Paper}
+              variant="outlined"
+              sx={{
+                ".MuiTable-root": {
+                  tableLayout: "fixed",
+                },
+              }}
+            >
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell width="40%">Title</TableCell>
+                    <TableCell width="25%">Uploaded</TableCell>
+                    <TableCell width="35%">Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {resources.map((resource) => (
+                    <TableRow key={resource.id}>
+                      <TableCell
+                        sx={{
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
+                      >
+                        {resource.title}
+                      </TableCell>
+                      <TableCell>
+                        {new Date(resource.uploaded_at).toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", gap: 1 }}>
+                          <Tooltip title="Preview resource" placement="top" arrow>
                             <IconButton
                               onClick={() => onPreviewResource(resource)}
                               size="small"
@@ -344,46 +352,48 @@ const LessonListItem = ({
                             >
                               <Visibility fontSize="small" />
                             </IconButton>
-
-                            {/* Download IconButton */}
-                            <IconButton
-                              onClick={(e) => handleDownload(resource, e)}
-                              disabled={downloading === resource.id}
-                              size="small"
-                              sx={{
-                                backgroundColor: "#14213d",
-                                color: "white",
-                                borderRadius: "4px",
-                                p: "4px",
-                                "&:hover": {
-                                  backgroundColor: "#fca311",
-                                },
-                                "&.Mui-disabled": {
-                                  backgroundColor: "rgba(0, 0, 0, 0.12)",
-                                  color: "rgba(0, 0, 0, 0.26)",
-                                },
-                              }}
-                            >
-                              {downloading === resource.id ? (
-                                <CircularProgress size={20} color="inherit" />
-                              ) : (
-                                <Download fontSize="small" />
-                              )}
-                            </IconButton>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </TableContainer>
-            </Box>
+                          </Tooltip>
+                          <Tooltip title="Download resource" placement="top" arrow>
+                            <span>
+                              <IconButton
+                                onClick={(e) => handleDownload(resource, e)}
+                                disabled={downloading === resource.id}
+                                size="small"
+                                sx={{
+                                  backgroundColor: "#14213d",
+                                  color: "white",
+                                  borderRadius: "4px",
+                                  p: "4px",
+                                  "&:hover": {
+                                    backgroundColor: "#fca311",
+                                  },
+                                  "&.Mui-disabled": {
+                                    backgroundColor: "rgba(0, 0, 0, 0.12)",
+                                    color: "rgba(0, 0, 0, 0.26)",
+                                  },
+                                }}
+                              >
+                                {downloading === resource.id ? (
+                                  <CircularProgress size={20} color="inherit" />
+                                ) : (
+                                  <Download fontSize="small" />
+                                )}
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           ) : (
             <Typography variant="body2">No resources available</Typography>
           )}
         </Box>
       </Collapse>
-    </>
+    </Box>
   );
 };
 
@@ -400,22 +410,14 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
       const fetchLessons = async () => {
         setLoading(true);
         try {
-          console.log("Fetching lessons for course:", courseId);
           const lessonsData = await getLessonsForCourse(courseId);
-          console.log("Received lessons data:", lessonsData);
-
           const normalizedLessons = lessonsData.map((lesson) => ({
             ...lesson,
             completed: Boolean(lesson.completed),
           }));
-          console.log("Normalized lessons:", normalizedLessons);
-
           setLessons(normalizedLessons);
         } catch (error) {
-          console.error(
-            "Error fetching lessons:",
-            error.response?.data || error
-          );
+          console.error("Error fetching lessons:", error.response?.data || error);
           setLessons([]);
         } finally {
           setLoading(false);
@@ -439,13 +441,21 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
     }
   };
 
-  const handlePreviewResource = async (resource) => {
-    try {
-      // For now, just set the resource directly since we're not handling videos yet
+  const handlePreviewResource = (resource) => {
+    if (isMobile) {
+      const openPreviewInNewTab = async () => {
+        try {
+          const blob = await getResourcePreview(resource.id);
+          const blobUrl = URL.createObjectURL(blob);
+          window.open(blobUrl, '_blank');
+        } catch (error) {
+          console.error("Error opening preview:", error);
+        }
+      };
+      openPreviewInNewTab();
+    } else {
       setPreviewResource(resource);
       setSelectedLesson(null);
-    } catch (error) {
-      console.error("Error loading preview:", error);
     }
   };
 
@@ -456,6 +466,7 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
         maxHeight: "90vh",
         width: isMobile ? "100%" : "1200px",
         margin: "16px",
+        overflow: "hidden",
       },
     },
     content: {
@@ -500,6 +511,70 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
       return <PreviewContent resource={previewResource} />;
     }
 
+    if (selectedLesson) {
+      return (
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            width: "100%",
+            height: "100%",
+            overflow: "hidden",
+          }}
+        >
+          <Box
+            sx={{
+              flex: 1,
+              overflow: "auto",
+              p: 3,
+            }}
+          >
+            <Typography
+              variant="body1"
+              sx={{
+                whiteSpace: "pre-wrap",
+                overflowWrap: "break-word",
+                mb: 4,
+              }}
+            >
+              {selectedLesson.description}
+            </Typography>
+
+            <Box
+              sx={{
+                mt: 4,
+                p: 3,
+                bgcolor: "rgba(20, 33, 61, 0.04)",
+                borderRadius: 1,
+                border: 1,
+                borderColor: "divider",
+              }}
+            >
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  color: "#14213d",
+                  mb: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <span role="img" aria-label="books">
+                  📚
+                </span>{" "}
+                Available Resources
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Click the dropdown arrow next to the lesson to view and access
+                the lesson resources.
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      );
+    }
+
     return (
       <Box
         sx={{
@@ -513,10 +588,10 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
         }}
       >
         <Typography variant="h6" gutterBottom>
-          Select a resource to preview
+          Select a lesson to view details
         </Typography>
         <Typography variant="body2">
-          Click the preview button next to any resource to view its contents
+          Choose a lesson from the sidebar to view its description and resources
         </Typography>
       </Box>
     );
@@ -550,7 +625,7 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
             },
           }}
         >
-          Back to Lesson
+          Back
         </Button>
       </Box>
     </Box>
@@ -567,15 +642,50 @@ const CourseViewDialog = ({ courseId, courseTitle, open, onClose }) => {
     >
       <DialogTitle
         sx={{
+          p: 0,
+          m: 0,
+          minHeight: 64,
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
         }}
       >
-        <Typography variant="h6" sx={{ color: "#14213d", fontWeight: "bold" }}>
-          {courseTitle}
-        </Typography>
-        <IconButton edge="end" onClick={onClose}>
+        <Box
+          sx={{
+            flex: 1,
+            px: 3,
+            py: 2,
+            minWidth: 0,
+            overflow: "hidden",
+          }}
+        >
+          <Typography
+            variant="h6"
+            component="h2"
+            sx={{
+              color: "#14213d",
+              fontWeight: "bold",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+            title={courseTitle}
+          >
+            {courseTitle}
+          </Typography>
+        </Box>
+        <IconButton
+          edge="end"
+          onClick={onClose}
+          sx={{
+            p: 2,
+            borderRadius: 0,
+            height: 64,
+            width: 64,
+            "&:hover": {
+              backgroundColor: "rgba(0, 0, 0, 0.04)",
+            },
+          }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>

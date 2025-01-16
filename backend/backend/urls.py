@@ -32,6 +32,8 @@ from content.views import (
     AvailableCoursesView,
     EnrolledCoursesView,
     EnrollCourseView,
+    AdminUpdateCourseVisibilityView,
+    AdminUpdateCourseView,
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -76,7 +78,9 @@ urlpatterns = [
     path('api/admin/lessons/<int:lesson_id>/remove', AdminRemoveLessonView.as_view(), name='admin-remove-lesson'),
     path('api/admin/lessons/resources/add/', AddLessonResourceView.as_view(), name='add-lesson-resource'),
     path('api/admin/lessons/resources/<int:id>/', DeleteLessonResourceView.as_view(), name='delete-lesson-resource'),
-    
+    path('api/admin/courses/<int:course_id>/visibility/', AdminUpdateCourseVisibilityView.as_view(), name='admin-update-course-visibility'),
+    path('api/admin/courses/<str:course_id>/update/', AdminUpdateCourseView.as_view(), name='admin-update-course'),
+
     # Include router URLs
     path('api/', include(router.urls)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

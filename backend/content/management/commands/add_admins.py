@@ -14,7 +14,7 @@ class Command(BaseCommand):
             {
                 'email': 'admin@test.com',
                 'name': 'Test Admin',
-                'password': 'TestAdmin123!',  # Simpler password for testing
+                'password': 'TestAdmin123!',  
                 'role': 'admin'
             }
         ]

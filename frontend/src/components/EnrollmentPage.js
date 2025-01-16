@@ -12,30 +12,45 @@ import {
   Container,
   Chip,
   Dialog,
-  DialogTitle,
   DialogContent,
   DialogActions,
   Grid,
   CircularProgress,
   Alert,
   MenuItem,
-  TablePagination,
+  Tooltip,
+  Paper,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Pagination,
 } from "@mui/material";
-import { Search, AccessTime, Assignment } from "@mui/icons-material";
+import { Search, AccessTime, Assignment, School } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { getAvailableCourses, enrollCourse } from "../services/api";
 
 const CourseCard = ({ course, onEnrollClick }) => {
+  const truncateTitle = (text) => {
+    if (text.length <= 35) return text;
+    return text.slice(0, 32) + "...";
+  };
+
+  const truncateDescription = (text) => {
+    if (text.length <= 75) return text;
+    return text.slice(0, 72) + "...";
+  };
+
   const getLevelColor = (level) => {
     switch (level.toLowerCase()) {
-      case 'beginner':
-        return { bg: '#d4edda', text: '#155724' };
-      case 'intermediate':
-        return { bg: '#fff3cd', text: '#856404' };
-      case 'advanced':
-        return { bg: '#f8d7da', text: '#721c24' };
+      case "beginner":
+        return { bg: "#d4edda", text: "#155724" };
+      case "intermediate":
+        return { bg: "#fff3cd", text: "#856404" };
+      case "advanced":
+        return { bg: "#f8d7da", text: "#721c24" };
       default:
-        return { bg: '#f8f9fa', text: '#383d41' };
+        return { bg: "#f8f9fa", text: "#383d41" };
     }
   };
 
@@ -65,35 +80,48 @@ const CourseCard = ({ course, onEnrollClick }) => {
       fontWeight: "medium",
       fontSize: "0.875rem",
     },
+    title: {
+      color: "#14213d",
+      fontWeight: "bold",
+      mt: 2,
+      mb: 2,
+      minHeight: "3rem",
+      maxHeight: "3rem",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      display: "-webkit-box",
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: "vertical",
+      lineHeight: 1.2,
+    },
+    description: {
+      mb: 2,
+      minHeight: "3rem",
+      maxHeight: "3rem",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      display: "-webkit-box",
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: "vertical",
+      lineHeight: 1.3,
+    },
   };
 
   return (
     <Card sx={styles.card}>
-      <CardContent sx={styles.cardContent}>        
-        <Chip
-          label={course.level}
-          sx={styles.levelChip}
-        />
+      <CardContent sx={styles.cardContent}>
+        <Chip label={course.level} sx={styles.levelChip} />
 
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            color: "#14213d", 
-            fontWeight: "bold",
-            mt: 2,
-            mb: 2,
-            minHeight: "3rem"
-          }}
-        >
-          {course.title}
+        <Typography variant="h6" sx={styles.title}>
+          {truncateTitle(course.title)}
         </Typography>
 
-        <Typography 
-          variant="body2" 
-          color="text.secondary" 
-          sx={{ mb: 2, minHeight: "3rem" }}
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          sx={styles.description}
         >
-          {course.description}
+          {truncateDescription(course.description)}
         </Typography>
 
         <Box sx={{ mb: 3 }}>
@@ -122,7 +150,7 @@ const CourseCard = ({ course, onEnrollClick }) => {
             "&:hover": { backgroundColor: "#fca311" },
           }}
         >
-          ENROLL NOW
+          VIEW COURSE
         </Button>
       </CardContent>
     </Card>
@@ -141,12 +169,13 @@ const EnrollmentPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [enrollDialogOpen, setEnrollDialogOpen] = useState(false);
-  const [enrolling, setEnrolling] = useState(false);
-  
-  // Pagination and filter states
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
+
+  const [page, setPage] = useState(1);
+  const [rowsPerPage] = useState(6);
   const [levelFilter, setLevelFilter] = useState("All");
+
+  const [dialogError, setDialogError] = useState(null);
+  const [dialogEnrolling, setDialogEnrolling] = useState(false);
 
   useEffect(() => {
     fetchAvailableCourses();
@@ -159,7 +188,6 @@ const EnrollmentPage = () => {
       setAvailableCourses(data);
       setFilteredCourses(data);
     } catch (error) {
-      console.error("Error fetching courses:", error);
       setError("Failed to load available courses");
       setAvailableCourses([]);
       setFilteredCourses([]);
@@ -170,26 +198,30 @@ const EnrollmentPage = () => {
 
   const filterCourses = useCallback(() => {
     let filtered = [...availableCourses];
-    
+
     if (searchTerm) {
-      filtered = filtered.filter(course =>
+      filtered = filtered.filter((course) =>
         course.title.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
+
     if (levelFilter !== "All") {
-      filtered = filtered.filter(course => 
-        course.level.toLowerCase() === levelFilter.toLowerCase()
+      filtered = filtered.filter(
+        (course) => course.level.toLowerCase() === levelFilter.toLowerCase()
       );
     }
-    
+
     setFilteredCourses(filtered);
-    setPage(0);
+    setPage(1);
   }, [availableCourses, searchTerm, levelFilter]);
 
   useEffect(() => {
     filterCourses();
   }, [filterCourses]);
+
+  useEffect(() => {
+    setPage(1);
+  }, []);
 
   const handleEnrollClick = (course) => {
     setSelectedCourse(course);
@@ -198,26 +230,39 @@ const EnrollmentPage = () => {
 
   const handleEnrollConfirm = async () => {
     try {
-      setEnrolling(true);
+      setDialogEnrolling(true);
+      setDialogError(null);
+
       await enrollCourse(selectedCourse.course_id);
       setEnrollDialogOpen(false);
-      navigate('/learning');
+      navigate("/learning", {
+        state: {
+          enrollSuccess: true,
+          courseName: selectedCourse.title,
+        },
+      });
     } catch (error) {
-      console.error("Error enrolling:", error);
-      setError(error.response?.data?.error || "Failed to enroll in course");
+      setDialogError(
+        error.response?.data?.error || "Failed to enroll in course"
+      );
     } finally {
-      setEnrolling(false);
+      setDialogEnrolling(false);
     }
   };
 
   const handlePageChange = (event, newPage) => {
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+    const mainCard = document.querySelector('[class*="wrapper"]');
+    if (mainCard) {
+      const headerOffset = 16;
+      const cardPosition = mainCard.getBoundingClientRect().top;
+      const offsetPosition = cardPosition + window.pageYOffset - headerOffset;
 
-  const handleRowsPerPageChange = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
   };
 
   const handleLevelChange = (event) => {
@@ -275,68 +320,79 @@ const EnrollmentPage = () => {
       },
     },
     pagination: {
-      backgroundColor: "#fca311",
-      ".MuiTablePagination-select": {
-        backgroundColor: "white",
-        borderRadius: "4px",
-      },
-      ".MuiTablePagination-selectIcon": {
+      display: "flex",
+      justifyContent: "center",
+      padding: "2rem 0 1rem 0",
+      "& .MuiPaginationItem-root": {
         color: "#14213d",
-      },
-      "& .MuiButtonBase-root": {
-        color: "#14213d",
-        "&.Mui-disabled": {
-          color: "rgba(0, 0, 0, 0.26)",
+        "&.Mui-selected": {
+          backgroundColor: "#fca311",
+          color: "white",
         },
       },
     },
   };
 
+  const paginatedCourses = filteredCourses.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
+
   return (
     <Container maxWidth="xl">
       <Box sx={{ padding: isMobile ? 2 : 3 }}>
         <Card sx={styles.wrapper}>
-          <Box sx={{
-            display: "flex",
-            flexDirection: isMobile ? "column" : "row",
-            justifyContent: "space-between",
-            alignItems: isMobile ? "stretch" : "center",
-            mb: 4,
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: isMobile ? "column" : "row",
+              justifyContent: "space-between",
+              alignItems: isMobile ? "stretch" : "center",
+              mb: 4,
+            }}
+          >
             <Typography variant="h1" sx={styles.header}>
               Available Courses
             </Typography>
           </Box>
 
           <Box sx={styles.filterContainer}>
-            <TextField
-              placeholder="Search courses..."
-              variant="outlined"
-              size="small"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              sx={styles.searchField}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="action" />
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              select
-              size="small"
-              label="Difficulty Level"
-              value={levelFilter}
-              onChange={handleLevelChange}
-              sx={styles.levelSelect}
+            <Tooltip title="Search courses by title" placement="top" arrow>
+              <TextField
+                placeholder="Search courses..."
+                variant="outlined"
+                size="small"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={styles.searchField}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search color="action" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            </Tooltip>
+            <Tooltip
+              title="Filter courses by difficulty level"
+              placement="top"
+              arrow
             >
-              <MenuItem value="All">All Levels</MenuItem>
-              <MenuItem value="beginner">Beginner</MenuItem>
-              <MenuItem value="intermediate">Intermediate</MenuItem>
-              <MenuItem value="advanced">Advanced</MenuItem>
-            </TextField>
+              <TextField
+                select
+                size="small"
+                label="Difficulty Level"
+                value={levelFilter}
+                onChange={handleLevelChange}
+                sx={styles.levelSelect}
+              >
+                <MenuItem value="All">All Levels</MenuItem>
+                <MenuItem value="beginner">Beginner</MenuItem>
+                <MenuItem value="intermediate">Intermediate</MenuItem>
+                <MenuItem value="advanced">Advanced</MenuItem>
+              </TextField>
+            </Tooltip>
           </Box>
 
           {loading ? (
@@ -344,39 +400,44 @@ const EnrollmentPage = () => {
               <CircularProgress />
             </Box>
           ) : error ? (
-            <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
           ) : (
             <>
               <Grid container spacing={3}>
-                {filteredCourses
-                  .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                  .map((course) => (
-                    <Grid item xs={12} sm={6} md={4} key={course.course_id}>
-                      <CourseCard 
-                        course={course} 
-                        onEnrollClick={handleEnrollClick}
-                      />
-                    </Grid>
-                  ))
-                }
+                {paginatedCourses.map((course) => (
+                  <Grid item xs={12} sm={6} md={4} key={course.course_id}>
+                    <CourseCard
+                      course={course}
+                      onEnrollClick={handleEnrollClick}
+                    />
+                  </Grid>
+                ))}
                 {filteredCourses.length === 0 && (
                   <Grid item xs={12}>
                     <Box
                       sx={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
                         py: 8,
                         px: 2,
-                        backgroundColor: '#f8f9fa',
+                        backgroundColor: "#f8f9fa",
                         borderRadius: 1,
                       }}
                     >
-                      <Typography variant="h6" sx={{ color: 'text.secondary', mb: 1 }}>
+                      <Typography
+                        variant="h6"
+                        sx={{ color: "text.secondary", mb: 1 }}
+                      >
                         No courses found
                       </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ color: "text.secondary", textAlign: "center" }}
+                      >
                         Try adjusting your search or filter criteria.
                       </Typography>
                     </Box>
@@ -385,16 +446,12 @@ const EnrollmentPage = () => {
               </Grid>
 
               {filteredCourses.length > 0 && (
-                <Box sx={{ mt: 3 }}>
-                  <TablePagination
-                    component="div"
-                    count={filteredCourses.length}
+                <Box sx={styles.pagination}>
+                  <Pagination
+                    count={Math.ceil(filteredCourses.length / rowsPerPage)}
                     page={page}
-                    onPageChange={handlePageChange}
-                    rowsPerPage={rowsPerPage}
-                    onRowsPerPageChange={handleRowsPerPageChange}
-                    rowsPerPageOptions={[6, 12, 24]}
-                    sx={styles.pagination}
+                    onChange={handlePageChange}
+                    color="primary"
                   />
                 </Box>
               )}
@@ -404,54 +461,220 @@ const EnrollmentPage = () => {
 
         <Dialog
           open={enrollDialogOpen}
-          onClose={() => !enrolling && setEnrollDialogOpen(false)}
-          maxWidth="sm"
+          onClose={() => {
+            if (!dialogEnrolling) {
+              setEnrollDialogOpen(false);
+              setDialogError(null);
+            }
+          }}
+          maxWidth="md"
           fullWidth
         >
-          <DialogTitle sx={{ color: "#14213d" }}>
-            Confirm Enrollment
-          </DialogTitle>
-          <DialogContent>
-            {selectedCourse && (
-              <>
-                <Typography variant="h6" gutterBottom>
-                  {selectedCourse.title}
-                </Typography>
-                <Typography variant="body1" gutterBottom>
-                  Duration: {selectedCourse.duration}
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-                  By enrolling, you'll get immediate access to the course materials and it will appear in your learning dashboard.
-                </Typography>
-                {error && (
-                  <Alert severity="error" sx={{ mt: 2 }}>
-                    {error}
-                  </Alert>
-                )}
-              </>
-            )}
-          </DialogContent>
-          <DialogActions sx={{ padding: 2 }}>
-            <Button 
-              onClick={() => setEnrollDialogOpen(false)}
-              sx={{ color: "#14213d" }}
-              disabled={enrolling}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              onClick={handleEnrollConfirm}
-              disabled={enrolling}
-              sx={{
-                backgroundColor: "#14213d",
-                color: "white",
-                "&:hover": { backgroundColor: "#fca311" },
-              }}
-            >
-              {enrolling ? <CircularProgress size={24} /> : "Confirm Enrollment"}
-            </Button>
-          </DialogActions>
+          {selectedCourse && (
+            <>
+              <DialogContent sx={{ p: 3 }}>
+                <Grid container spacing={3}>
+                  {/* Course Title and Level */}
+                  <Grid item xs={12}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        mb: 2,
+                      }}
+                    >
+                      <Typography
+                        variant="h4"
+                        sx={{
+                          color: "#14213d",
+                          fontWeight: "bold",
+                          mb: 1,
+                          wordBreak: "break-word", // Enable word breaking
+                          overflowWrap: "break-word", // Ensure long words break
+                          hyphens: "auto", // Enable hyphenation
+                          "& > span": {
+                            display: "inline-block", // Make text blocks wrap naturally
+                            maxWidth: "100%", // Ensure content doesn't overflow
+                          },
+                        }}
+                      >
+                        <span>{selectedCourse.title}</span>
+                      </Typography>
+                      <Chip
+                        label={selectedCourse.level}
+                        sx={{
+                          backgroundColor: "#fca311",
+                          color: "white",
+                          alignSelf: "flex-start", // Align chip to the left
+                        }}
+                      />
+                    </Box>
+                  </Grid>
+
+                  {/* Course Details */}
+                  <Grid item xs={12} md={8}>
+                    <Typography variant="h6" sx={{ color: "#14213d", mb: 1 }}>
+                      Course Description
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 3,
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                        whiteSpace: "pre-line", // Preserve line breaks while wrapping text
+                        maxWidth: "100%",
+                      }}
+                    >
+                      {selectedCourse.description}
+                    </Typography>
+
+                    <Typography variant="h6" sx={{ color: "#14213d", mb: 1 }}>
+                      Prerequisites
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mb: 3,
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                    >
+                      {selectedCourse.prerequisites}
+                    </Typography>
+                  </Grid>
+
+                  {/* Course Meta Information */}
+                  <Grid item xs={12} md={4}>
+                    <Paper
+                      elevation={1}
+                      sx={{
+                        p: 2,
+                        backgroundColor: "#f8f9fa",
+                        "& .MuiListItemText-secondary": {
+                          wordBreak: "break-word",
+                          overflowWrap: "break-word",
+                        },
+                      }}
+                    >
+                      <List>
+                        <ListItem>
+                          <ListItemIcon>
+                            <AccessTime />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary="Duration"
+                            secondary={selectedCourse.duration}
+                            primaryTypographyProps={{
+                              style: { wordBreak: "break-word" },
+                            }}
+                            secondaryTypographyProps={{
+                              style: { wordBreak: "break-word" },
+                            }}
+                          />
+                        </ListItem>
+                        <ListItem>
+                          <ListItemIcon>
+                            <School />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary="Level"
+                            secondary={selectedCourse.level}
+                            primaryTypographyProps={{
+                              style: { wordBreak: "break-word" },
+                            }}
+                            secondaryTypographyProps={{
+                              style: { wordBreak: "break-word" },
+                            }}
+                          />
+                        </ListItem>
+                      </List>
+                    </Paper>
+                  </Grid>
+
+                  {/* Error Alert */}
+                  {dialogError && (
+                    <Grid item xs={12}>
+                      <Alert
+                        severity="error"
+                        sx={{
+                          "& .MuiAlert-message": {
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
+                          },
+                        }}
+                        action={
+                          dialogError.includes("already enrolled") && (
+                            <Button
+                              color="inherit"
+                              size="small"
+                              onClick={() => {
+                                setEnrollDialogOpen(false);
+                                setDialogError(null);
+                                navigate("/learning");
+                              }}
+                            >
+                              Go to your courses
+                            </Button>
+                          )
+                        }
+                      >
+                        {dialogError}
+                      </Alert>
+                    </Grid>
+                  )}
+                </Grid>
+              </DialogContent>
+
+              <DialogActions
+                sx={{
+                  p: 3,
+                  backgroundColor: "#f8f9fa",
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 2,
+                }}
+              >
+                <Button
+                  onClick={() => {
+                    setEnrollDialogOpen(false);
+                    setDialogError(null);
+                  }}
+                  disabled={dialogEnrolling}
+                  sx={{
+                    color: "#14213d",
+                    textTransform: "none",
+                    fontSize: "1rem",
+                    minWidth: "100px",
+                    padding: "8px 16px",
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={handleEnrollConfirm}
+                  disabled={
+                    dialogEnrolling || dialogError?.includes("already enrolled")
+                  }
+                  sx={{
+                    backgroundColor: "#14213d",
+                    "&:hover": { backgroundColor: "#fca311" },
+                    textTransform: "none",
+                    fontSize: "1rem",
+                    minWidth: "120px",
+                    padding: "8px 24px",
+                  }}
+                >
+                  {dialogEnrolling ? (
+                    <CircularProgress size={24} sx={{ color: "white" }} />
+                  ) : (
+                    "Enroll Now"
+                  )}
+                </Button>
+              </DialogActions>
+            </>
+          )}
         </Dialog>
       </Box>
     </Container>

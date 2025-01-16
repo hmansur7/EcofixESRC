@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Dialog, 
   DialogTitle, 
@@ -83,8 +83,31 @@ const ProfileDialog = ({ open, onClose, userInfo }) => {
     }
   };
 
+  const resetStates = () => {
+    setPasswordData({
+      currentPassword: '',
+      newPassword: '',
+      confirmPassword: ''
+    });
+    setErrors({});
+    setApiError('');
+    setSuccess('');
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (!open) {
+      resetStates();
+    }
+  }, [open]);
+
+  const handleClose = () => {
+    resetStates();
+    onClose();
+  };
+
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ bgcolor: '#14213d', color: 'white' }}>
         Profile Settings
       </DialogTitle>
@@ -145,7 +168,12 @@ const ProfileDialog = ({ open, onClose, userInfo }) => {
         )}
       </DialogContent>
       <DialogActions sx={{ p: 2 }}>
-        <Button onClick={onClose} disabled={loading}>
+        <Button 
+          variant='text'
+          onClick={handleClose} 
+          disabled={loading}
+          sx={{ color: '#14213d'}}
+        >
           Cancel
         </Button>
         <Button 

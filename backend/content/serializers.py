@@ -1,6 +1,5 @@
 # serializers.py
 from rest_framework import serializers
-import re
 from .models import (
     CourseProgress,
     LessonProgress,
@@ -50,7 +49,10 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
             'prerequisites',
             'instructor_name',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'is_visible',  
+            'visibility_start_date',
+            'visibility_end_date'
         ]
         read_only_fields = ['instructor_name', 'created_at', 'updated_at']
     
@@ -64,6 +66,7 @@ class InstructorCourseSerializer(serializers.ModelSerializer):
     
 class CourseSerializer(serializers.ModelSerializer):
     instructor_name = serializers.SerializerMethodField()
+    visibility_status = serializers.CharField(read_only=True)
     
     class Meta:
         model = Course
@@ -76,10 +79,13 @@ class CourseSerializer(serializers.ModelSerializer):
             'prerequisites',
             'instructor_name',
             'created_at',
-            'updated_at'
+            'updated_at',
+            'is_visible',
+            'visibility_start_date',
+            'visibility_end_date',
+            'visibility_status'
         ]
-        read_only_fields = ['instructor_name', 'created_at', 'updated_at']
-    
+
     def get_instructor_name(self, obj):
         return obj.instructor.name if obj.instructor else None
     
@@ -88,26 +94,16 @@ class CourseSerializer(serializers.ModelSerializer):
         if request and getattr(request, 'user', None):
             if request.user.role != 'admin':
                 raise serializers.ValidationError("Only admin users can create or modify courses.")
+        
+        start_date = data.get('visibility_start_date')
+        end_date = data.get('visibility_end_date')
+        
+        if start_date and end_date and end_date <= start_date:
+            raise serializers.ValidationError({
+                "visibility_end_date": "End date must be after start date"
+            })
+            
         return data
-    
-    def validate_title(self, value):
-        if Course.objects.filter(title__iexact=value).exists():
-            raise serializers.ValidationError("A course with this title already exists")
-        return value
-    
-    def validate_duration(self, value):
-        duration_pattern = r'^\d+\s+(week|weeks|month|months)$'
-        if not re.match(duration_pattern, value.lower()):
-            raise serializers.ValidationError(
-                'Duration must be in format: "X week(s)" or "X month(s)"'
-            )
-        return value
-    
-    def create(self, validated_data):
-        request = self.context.get('request')
-        if request and hasattr(request, 'user'):
-            validated_data['instructor'] = request.user
-        return super().create(validated_data)
 
 class EnrollmentSerializer(serializers.ModelSerializer):
     course = CourseSerializer(read_only=True)
@@ -183,7 +179,7 @@ class LessonResourceBulkSerializer(serializers.Serializer):
             raise serializers.ValidationError("Number of titles must match number of files")
         
         max_size_mb = 10
-        allowed_extensions = ['pdf', 'docx', 'pptx', 'xlsx', 'jpg', 'jpeg', 'png', 'mp4', 'webm']
+        allowed_extensions = ['pdf', 'docx', 'pptx','jpg', 'jpeg', 'png']
 
         for file in data['resources']:
             if file.size > max_size_mb * 1024 * 1024:

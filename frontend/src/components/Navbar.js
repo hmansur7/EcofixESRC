@@ -38,7 +38,7 @@ const Navbar = ({ title, links, adminView = false }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('admin'); // 'admin' or 'student'
+  const [viewMode, setViewMode] = useState('admin'); 
 
   const [userInfo, setUserInfo] = useState(() => ({
     name: localStorage.getItem("userName") || "User",
@@ -85,10 +85,9 @@ const Navbar = ({ title, links, adminView = false }) => {
   };
 
   const handleViewModeSwitch = () => {
-    // Check if user has admin privileges
     const userRole = localStorage.getItem("userRole");
     if (userRole !== "admin") {
-      return; // Early return if not admin
+      return; 
     }
 
     const newMode = viewMode === 'admin' ? 'student' : 'admin';
@@ -96,7 +95,6 @@ const Navbar = ({ title, links, adminView = false }) => {
     handleClose();
     setMobileMenuOpen(false);
 
-    // Store the current view mode in localStorage
     localStorage.setItem("viewMode", newMode);
 
     if (newMode === 'student') {
@@ -106,7 +104,6 @@ const Navbar = ({ title, links, adminView = false }) => {
     }
   };
 
-  // Check initial view mode from localStorage
   useEffect(() => {
     const savedViewMode = localStorage.getItem("viewMode");
     const userRole = localStorage.getItem("userRole");
@@ -285,7 +282,7 @@ const Navbar = ({ title, links, adminView = false }) => {
                         <AdminPanelSettings fontSize="small" />
                       }
                     </ListItemIcon>
-                    {viewMode === 'admin' ? "View as Student" : "Back to Admin"}
+                    {viewMode === 'admin' ? "View as Student" : "View as Instructor"}
                   </MenuItem>
                 )}
                 <MenuItem onClick={handleProfileClick}>

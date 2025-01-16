@@ -3,6 +3,7 @@ import mimetypes
 import os
 import re
 from wsgiref.util import FileWrapper
+from django.core.files.storage import default_storage
 
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
@@ -21,6 +22,11 @@ from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from django.db.models import Q
+from django.utils import timezone
+from django.utils.dateparse import parse_datetime
+from django.db.models import Max 
 
 from .models import (
     AppUser,
@@ -44,7 +50,6 @@ from .serializers import (
     LessonSerializer,
     ResendVerificationSerializer,
     UserSerializer,
-    EnrollmentSerializer,
     InstructorCourseSerializer,
 )
 
@@ -400,12 +405,30 @@ class LogoutView(APIView):
         return response
     
 class CourseViewSet(viewsets.ModelViewSet):
-    queryset = Course.objects.all()
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated]
 
+    def get_queryset(self):
+        if self.request.user.role == 'admin':
+            return Course.objects.all()
+        
+        now = timezone.now()
+        return Course.objects.filter(
+            Q(is_visible=True) &
+            (
+                (Q(visibility_start_date__isnull=True) & Q(visibility_end_date__isnull=True)) |
+                (Q(visibility_start_date__lte=now) & Q(visibility_end_date__gte=now))
+            )
+        )
+
 class EnrollCourseView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = CourseSerializer
+    
+    def get_queryset(self):
+        return Course.objects.filter(
+            enrolled_users__user=self.request.user
+        ).order_by('title')
     
     def post(self, request, course_id):
         try:
@@ -449,22 +472,38 @@ class EnrolledCoursesView(ListAPIView):
     serializer_class = CourseSerializer
     
     def get_queryset(self):
+        now = timezone.now()
         return Course.objects.filter(
             enrolled_users__user=self.request.user
+        ).filter(
+            Q(is_visible=True) &
+            (
+                (Q(visibility_start_date__isnull=True) & Q(visibility_end_date__isnull=True)) |
+                (Q(visibility_start_date__lte=now) & Q(visibility_end_date__gte=now))
+            )
         ).order_by('title')
 
 class AvailableCoursesView(ListAPIView):
     permission_classes = [IsAuthenticated]
     serializer_class = CourseSerializer
-    
+
     def get_queryset(self):
+        now = timezone.now()
         enrolled_courses = Enrollment.objects.filter(
             user=self.request.user
         ).values_list('course_id', flat=True)
         
-        return Course.objects.exclude(
-            course_id__in=enrolled_courses
+        queryset = Course.objects.filter(
+            is_visible=True
+        ).filter(
+            Q(visibility_start_date__isnull=True, visibility_end_date__isnull=True) |
+            Q(visibility_start_date__lte=now, visibility_end_date__gte=now)
         ).order_by('title')
+        
+        print("Available courses query:", queryset.query)
+        print("Number of available courses:", queryset.count())
+        
+        return queryset
        
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
@@ -658,10 +697,88 @@ class AdminRemoveCourseView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = Course.objects.all()
     lookup_field = 'course_id'
-    
+
     def get_queryset(self):
         return Course.objects.filter(instructor=self.request.user)
 
+    def perform_destroy(self, instance):
+        if instance.instructor != self.request.user:
+            raise PermissionDenied("You can only delete your own courses.")
+        
+        with transaction.atomic():
+            lessons = Lesson.objects.filter(course=instance)
+            for lesson in lessons:
+                resources = LessonResource.objects.filter(lesson=lesson)
+                for resource in resources:
+                    if resource.file:
+                        file_path = os.path.join(settings.MEDIA_ROOT, str(resource.file))
+                        if os.path.exists(file_path):
+                            os.remove(file_path)  
+                    resource.delete()
+                
+                lesson.delete() 
+            instance.delete()  
+
+
+
+class AdminUpdateCourseVisibilityView(APIView):
+    permission_classes = [IsAdmin]
+    
+    def patch(self, request, course_id):
+        try:
+            course = get_object_or_404(Course, course_id=course_id)
+            
+            if course.instructor != request.user:
+                raise PermissionDenied("You can only update your own courses.")
+            
+            is_visible = request.data.get('is_visible')
+            start_date = request.data.get('visibility_start_date')
+            end_date = request.data.get('visibility_end_date')
+            
+            if is_visible is not None:
+                course.is_visible = is_visible
+                
+            course.visibility_start_date = parse_datetime(start_date) if start_date else None
+            course.visibility_end_date = parse_datetime(end_date) if end_date else None
+            
+            course.save()
+            serializer = CourseSerializer(course)
+            return Response(serializer.data)
+            
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class AdminUpdateCourseView(APIView):
+    permission_classes = [IsAdmin]
+    
+    def patch(self, request, course_id):
+        try:
+            course = get_object_or_404(Course, course_id=course_id)
+            
+            if course.instructor != request.user:
+                raise PermissionDenied("You can only update your own courses.")
+            
+            serializer = InstructorCourseSerializer(
+                course,
+                data=request.data,
+                partial=True
+            )
+            
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except ValidationError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response(
+                {"error": str(e)}, 
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
 class AdminAddEventView(CreateAPIView):
     permission_classes = [IsAdmin]
     queryset = Event.objects.all()
@@ -683,22 +800,24 @@ class AdminAddLessonView(CreateAPIView):
             raise ValidationError({"error": "course is required."})
         
         course = get_object_or_404(Course, course_id=course_id)
-        new_order = int(self.request.data.get('order'))
+        requested_order = int(self.request.data.get('order'))
 
-        affected_lessons = Lesson.objects.filter(
-            course=course,
-            order__gte=new_order
-        ).order_by('order')
+        highest_order = Lesson.objects.filter(course=course).aggregate(
+            max_order=Max('order'))['max_order'] or 0
 
-        if affected_lessons.exists():
-            with transaction.atomic():
-                for lesson in affected_lessons:
-                    lesson.order += 1
-                    lesson.save()
-                
-                serializer.save(course=course)
-        else:
-            serializer.save(course=course)
+        new_order = max(1, min(requested_order, highest_order + 1))
+
+        with transaction.atomic():
+            affected_lessons = Lesson.objects.filter(
+                course=course,
+                order__gte=new_order
+            ).order_by('-order')  
+
+            for lesson in affected_lessons:
+                lesson.order += 1
+                lesson.save()
+            
+            serializer.save(course=course, order=new_order)
 
 class AdminRemoveLessonView(DestroyAPIView):
     permission_classes = [IsAdmin]
@@ -710,6 +829,13 @@ class AdminRemoveLessonView(DestroyAPIView):
         deleted_order = instance.order
 
         with transaction.atomic():
+            resources = LessonResource.objects.filter(lesson=instance)
+            for resource in resources:
+                if resource.file:
+                    file_path = os.path.join(settings.MEDIA_ROOT, str(resource.file))
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+
             instance.delete()
 
             lessons_to_update = Lesson.objects.filter(
@@ -720,6 +846,12 @@ class AdminRemoveLessonView(DestroyAPIView):
             for lesson in lessons_to_update:
                 lesson.order -= 1
                 lesson.save()
+
+            all_lessons = Lesson.objects.filter(course=course).order_by('order')
+            for index, lesson in enumerate(all_lessons, start=1):
+                if lesson.order != index:
+                    lesson.order = index
+                    lesson.save()
 
 class AddLessonResourceView(CreateAPIView):
     permission_classes = [IsAdmin]
@@ -737,3 +869,11 @@ class DeleteLessonResourceView(DestroyAPIView):
     permission_classes = [IsAdmin]
     queryset = LessonResource.objects.all()
     lookup_field = 'id'
+
+    def perform_destroy(self, instance):
+        if instance.file:
+            file_path = os.path.join(settings.MEDIA_ROOT, str(instance.file))
+            if os.path.exists(file_path):
+                os.remove(file_path)
+            
+        instance.delete()

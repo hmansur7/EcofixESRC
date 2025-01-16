@@ -28,12 +28,12 @@ const Login = () => {
       required: "Please enter your email",
       pattern: {
         value: /\S+@\S+\.\S+/,
-        message: "Please enter a valid email"
-      }
+        message: "Please enter a valid email",
+      },
     },
     password: {
-      required: "Please enter your password"
-    }
+      required: "Please enter your password",
+    },
   };
 
   const validateField = (name, value) => {
@@ -57,7 +57,7 @@ const Login = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    Object.keys(formData).forEach(field => {
+    Object.keys(formData).forEach((field) => {
       const error = validateField(field, formData[field]);
       if (error) newErrors[field] = error;
     });
@@ -66,34 +66,36 @@ const Login = () => {
   };
 
   useEffect(() => {
-    const formIsValid = formData.email.trim() !== "" && formData.password.trim() !== "";
+    const formIsValid =
+      formData.email.trim() !== "" && formData.password.trim() !== "";
     setIsValid(formIsValid);
   }, [formData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setApiError(""); 
-    
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setApiError("");
+
     if (touched[name]) {
       const error = validateField(name, value);
-      setErrors(prev => ({ ...prev, [name]: error }));
+      setErrors((prev) => ({ ...prev, [name]: error }));
     }
   };
 
   const handleBlur = (e) => {
     const { name } = e.target;
-    setTouched(prev => ({ ...prev, [name]: true }));
+    setTouched((prev) => ({ ...prev, [name]: true }));
     const error = validateField(name, formData[name]);
-    setErrors(prev => ({ ...prev, [name]: error }));
+    setErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setApiError("");
-    
+
     const touchedFields = Object.keys(formData).reduce(
-      (acc, field) => ({ ...acc, [field]: true }), {}
+      (acc, field) => ({ ...acc, [field]: true }),
+      {}
     );
     setTouched(touchedFields);
 
@@ -104,21 +106,25 @@ const Login = () => {
     try {
       setLoading(true);
       const response = await loginUser(formData.email, formData.password);
-      const role = response.role;
-      
+      const role = response.role;    
+
       if (role === "admin") {
         navigate("/admin/dashboard");
       } else {
         navigate("/learning");
       }
     } catch (error) {
-      if (error.needsVerification) {
-        navigate("/verify-email", { 
-          state: { email: formData.email }
-        });
-      } else {
-        setApiError(error.message || "Login failed. Please check your credentials.");
-      }
+      if (error.needsVerification || 
+        (error.message && error.message.toLowerCase().includes('verify'))) {
+      localStorage.setItem("pendingVerification", formData.email);
+      navigate("/verify-email", { 
+        state: { email: formData.email }
+      });
+      return;
+      } 
+        setApiError(
+          error.message || "Login failed. Please check your credentials."
+        );
     } finally {
       setLoading(false);
     }
@@ -136,7 +142,11 @@ const Login = () => {
         }}
       >
         <LockOutlined sx={{ fontSize: 50, color: "#14213d" }} />
-        <Typography component="h1" variant="h5" sx={{ mt: 1, fontWeight: "bold", color: "#14213d" }}>
+        <Typography
+          component="h1"
+          variant="h5"
+          sx={{ mt: 1, fontWeight: "bold", color: "#14213d" }}
+        >
           Login
         </Typography>
         <Box
@@ -195,10 +205,14 @@ const Login = () => {
               mb: 2,
               backgroundColor: "#14213d",
               "&:hover": { backgroundColor: "#fca311" },
-              "&:disabled": { backgroundColor: "#cccccc" }
+              "&:disabled": { backgroundColor: "#cccccc" },
             }}
           >
-            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Login"}
+            {loading ? (
+              <CircularProgress size={24} sx={{ color: "white" }} />
+            ) : (
+              "Login"
+            )}
           </Button>
           {apiError && (
             <Alert severity="error" sx={{ mt: 2 }}>
