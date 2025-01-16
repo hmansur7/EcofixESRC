@@ -19,6 +19,7 @@ import {
 import { Search } from "@mui/icons-material";
 import { getEnrolledCourses } from "../services/api";
 import ViewCourseModal from "./ViewCourseModal";
+import ScrollToTop from './ScrollToTop';
 
 const truncateTitle = (text) => {
   if (text.length <= 35) return text;
@@ -344,8 +345,8 @@ const LearningDashboard = () => {
             courseTitle={selectedCourse.title}
           />
         )}
-        
       </Box>
+      <ScrollToTop/>
     </Container>
   );
 };

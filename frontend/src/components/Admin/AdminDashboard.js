@@ -38,6 +38,7 @@ import LessonManagement from "./LessonManagement";
 import CourseVisibilityManager from "./CourseVisibilityManager";
 import CourseManager from "./CourseManager";
 import ConfirmationDialog from "../ConfirmationDialog";
+import ScrollToTop from "../ScrollToTop";
 
 // Styles object
 const styles = {
@@ -156,7 +157,6 @@ const CourseForm = ({ onSubmit, onCancel }) => {
     });
 
     if (Object.keys(newErrors).length === 0) {
-      // Format the course data before submission
       const formattedCourse = {
         ...course,
         prerequisites: course.prerequisites.trim() || "None",
@@ -614,6 +614,7 @@ const AdminDashboard = () => {
           </Alert>
         </Snackbar>
       </Box>
+      <ScrollToTop/>
     </Container>
   );
 };

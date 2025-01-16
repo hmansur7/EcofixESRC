@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import { Search } from "@mui/icons-material";
 import { getCourseProgress, getEnrolledCourses } from "../services/api";
+import ScrollToTop from "./ScrollToTop";
 
 const ProgressDashboard = () => {
   const theme = useTheme();
@@ -39,8 +40,7 @@ const ProgressDashboard = () => {
       const coursesList = await getEnrolledCourses();
       setCourses(coursesList);
       setFilteredCourses(coursesList);
-      setPage(1); // Reset page when data loads
-
+      setPage(1);
       const progressMap = {};
       const progressPromises = coursesList.map(async (course) => {
         try {
@@ -92,7 +92,7 @@ const ProgressDashboard = () => {
     }
     
     setFilteredCourses(filtered);
-    setPage(1); // Reset page when filters change
+    setPage(1); 
   }, [courses, searchTerm, progressFilter, progressData]);
 
   useEffect(() => {
@@ -355,6 +355,7 @@ const ProgressDashboard = () => {
           </CardContent>
         </Card>
       </Box>
+      <ScrollToTop/>
     </Container>
   );
 };

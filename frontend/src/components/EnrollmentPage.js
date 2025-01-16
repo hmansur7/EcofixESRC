@@ -29,6 +29,7 @@ import {
 import { Search, AccessTime, Assignment, School } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { getAvailableCourses, enrollCourse } from "../services/api";
+import ScrollToTop from "./ScrollToTop";
 
 const CourseCard = ({ course, onEnrollClick }) => {
   const truncateTitle = (text) => {
@@ -489,12 +490,12 @@ const EnrollmentPage = () => {
                           color: "#14213d",
                           fontWeight: "bold",
                           mb: 1,
-                          wordBreak: "break-word", // Enable word breaking
-                          overflowWrap: "break-word", // Ensure long words break
-                          hyphens: "auto", // Enable hyphenation
+                          wordBreak: "break-word", 
+                          overflowWrap: "break-word", 
+                          hyphens: "auto", 
                           "& > span": {
-                            display: "inline-block", // Make text blocks wrap naturally
-                            maxWidth: "100%", // Ensure content doesn't overflow
+                            display: "inline-block", 
+                            maxWidth: "100%", 
                           },
                         }}
                       >
@@ -505,7 +506,7 @@ const EnrollmentPage = () => {
                         sx={{
                           backgroundColor: "#fca311",
                           color: "white",
-                          alignSelf: "flex-start", // Align chip to the left
+                          alignSelf: "flex-start", 
                         }}
                       />
                     </Box>
@@ -522,7 +523,7 @@ const EnrollmentPage = () => {
                         mb: 3,
                         wordBreak: "break-word",
                         overflowWrap: "break-word",
-                        whiteSpace: "pre-line", // Preserve line breaks while wrapping text
+                        whiteSpace: "pre-line", 
                         maxWidth: "100%",
                       }}
                     >
@@ -677,6 +678,7 @@ const EnrollmentPage = () => {
           )}
         </Dialog>
       </Box>
+      <ScrollToTop/>
     </Container>
   );
 };

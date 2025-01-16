@@ -20,25 +20,25 @@ import {
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
 import { logoutUser } from "../services/api";
-import { 
-  Logout, 
-  AccountCircle, 
-  Settings, 
+import {
+  Logout,
+  AccountCircle,
+  Settings,
   Menu as MenuIcon,
   PersonOutline,
-  AdminPanelSettings
+  AdminPanelSettings,
 } from "@mui/icons-material";
 import ProfileDialog from "./ProfileManager";
 
 const Navbar = ({ title, links, adminView = false }) => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   const [anchorEl, setAnchorEl] = useState(null);
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [viewMode, setViewMode] = useState('admin'); 
+  const [viewMode, setViewMode] = useState("admin");
 
   const [userInfo, setUserInfo] = useState(() => ({
     name: localStorage.getItem("userName") || "User",
@@ -87,20 +87,20 @@ const Navbar = ({ title, links, adminView = false }) => {
   const handleViewModeSwitch = () => {
     const userRole = localStorage.getItem("userRole");
     if (userRole !== "admin") {
-      return; 
+      return;
     }
 
-    const newMode = viewMode === 'admin' ? 'student' : 'admin';
+    const newMode = viewMode === "admin" ? "student" : "admin";
     setViewMode(newMode);
     handleClose();
     setMobileMenuOpen(false);
 
     localStorage.setItem("viewMode", newMode);
 
-    if (newMode === 'student') {
-      navigate('/learning');
+    if (newMode === "student") {
+      navigate("/learning");
     } else {
-      navigate('/admin/dashboard');
+      navigate("/admin/dashboard");
     }
   };
 
@@ -122,79 +122,92 @@ const Navbar = ({ title, links, adminView = false }) => {
           width: 240,
           backgroundColor: "#14213d",
           color: "white",
+          "& .MuiDrawer-paper": {
+            transition: "transform 0.3s ease-in-out",
+            width: 250,
+          },
         },
+      }}
+      SlideProps={{
+        timeout: 300,
+        easing: "cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       <Box sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
           <Avatar sx={{ bgcolor: "#fca311", mr: 1 }}>
             {getInitials(userInfo.name)}
           </Avatar>
           <Typography variant="subtitle1">{userInfo.name}</Typography>
         </Box>
-        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.12)' }} />
+        <Divider sx={{ bgcolor: "rgba(255,255,255,0.12)" }} />
         <List>
           {links.map((link) => (
-            <ListItem 
-              key={link.path} 
-              component={Link} 
+            <ListItem
+              key={link.path}
+              component={Link}
               to={link.path}
               onClick={() => setMobileMenuOpen(false)}
               sx={{
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgb(252, 162, 17)',
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "rgb(252, 162, 17)",
                 },
               }}
             >
               <ListItemText primary={link.label} />
             </ListItem>
           ))}
-          <Divider sx={{ my: 1, bgcolor: 'rgba(255,255,255,0.12)' }} />
+          <Divider sx={{ my: 1, bgcolor: "rgba(255,255,255,0.12)" }} />
           {adminView && (
-            <ListItem 
+            <ListItem
               onClick={handleViewModeSwitch}
               sx={{
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: 'rgb(252, 162, 17)',
+                cursor: "pointer",
+                "&:hover": {
+                  backgroundColor: "rgb(252, 162, 17)",
                 },
               }}
             >
               <ListItemIcon>
-                {viewMode === 'admin' ? 
-                  <PersonOutline sx={{ color: 'white' }} /> : 
-                  <AdminPanelSettings sx={{ color: 'white' }} />
-                }
+                {viewMode === "admin" ? (
+                  <PersonOutline sx={{ color: "white" }} />
+                ) : (
+                  <AdminPanelSettings sx={{ color: "white" }} />
+                )}
               </ListItemIcon>
-              <ListItemText primary={viewMode === 'admin' ? "View as Student" : "Back to Admin"} />
+              <ListItemText
+                primary={
+                  viewMode === "admin" ? "View as Student" : "Back to Admin"
+                }
+              />
             </ListItem>
           )}
-          <ListItem 
+          <ListItem
             onClick={handleProfileClick}
             sx={{
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: 'rgb(252, 162, 17)',
+              cursor: "pointer",
+              "&:hover": {
+                backgroundColor: "rgb(252, 162, 17)",
               },
             }}
           >
             <ListItemIcon>
-              <Settings sx={{ color: 'white' }} />
+              <Settings sx={{ color: "white" }} />
             </ListItemIcon>
             <ListItemText primary="Profile Settings" />
           </ListItem>
-          <ListItem 
+          <ListItem
             onClick={handleLogout}
             sx={{
-              cursor: 'pointer',
-              '&:hover': {
-                backgroundColor: 'rgb(252, 162, 17)',
+              cursor: "pointer",
+              "&:hover": {
+                backgroundColor: "rgb(252, 162, 17)",
               },
             }}
           >
             <ListItemIcon>
-              <Logout sx={{ color: 'white' }} />
+              <Logout sx={{ color: "white" }} />
             </ListItemIcon>
             <ListItemText primary="Logout" />
           </ListItem>
@@ -207,16 +220,16 @@ const Navbar = ({ title, links, adminView = false }) => {
     <>
       <AppBar position="static" sx={{ backgroundColor: "#14213d" }}>
         <Toolbar>
-          <Typography 
-            variant={isMobile ? "h6" : "h5"} 
-            sx={{ 
+          <Typography
+            variant={isMobile ? "h6" : "h5"}
+            sx={{
               flexGrow: 1,
-              fontSize: isMobile ? '1.1rem' : '1.5rem' 
+              fontSize: isMobile ? "1.1rem" : "1.5rem",
             }}
           >
             {title}
           </Typography>
-          
+
           {!isMobile && (
             <Box sx={{ display: "flex", alignItems: "center" }}>
               {links.map((link) => (
@@ -225,10 +238,10 @@ const Navbar = ({ title, links, adminView = false }) => {
                   color="inherit"
                   component={Link}
                   to={link.path}
-                  sx={{ 
+                  sx={{
                     margin: "0 0.5rem",
-                    '&:hover': {
-                      backgroundColor: 'rgb(252, 162, 17)',
+                    "&:hover": {
+                      backgroundColor: "rgb(252, 162, 17)",
                     },
                   }}
                 >
@@ -277,12 +290,15 @@ const Navbar = ({ title, links, adminView = false }) => {
                 {userInfo.role === "admin" && (
                   <MenuItem onClick={handleViewModeSwitch}>
                     <ListItemIcon>
-                      {viewMode === 'admin' ? 
-                        <PersonOutline fontSize="small" /> : 
+                      {viewMode === "admin" ? (
+                        <PersonOutline fontSize="small" />
+                      ) : (
                         <AdminPanelSettings fontSize="small" />
-                      }
+                      )}
                     </ListItemIcon>
-                    {viewMode === 'admin' ? "View as Student" : "View as Instructor"}
+                    {viewMode === "admin"
+                      ? "View as Student"
+                      : "View as Instructor"}
                   </MenuItem>
                 )}
                 <MenuItem onClick={handleProfileClick}>

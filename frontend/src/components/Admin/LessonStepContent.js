@@ -12,6 +12,8 @@ import {
   InputAdornment,
   Alert,
   Grid,
+  Paper,
+  Stack,
 } from "@mui/material";
 import { Description, CloudUpload, Delete, Add } from "@mui/icons-material";
 
@@ -272,114 +274,152 @@ const LessonStepContent = ({
     >
       <CardContent>
         <Box sx={{ mb: 3 }}>
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <Typography component="div">
-              • Supported file types: {ALLOWED_FILE_TYPES.join(", ")}
-              <br />• Maximum file size per file:{" "}
-              {MAX_SINGLE_FILE_SIZE / 1024 / 1024}MB
-              <br />• Maximum total file size:{" "}
-              {MAX_TOTAL_FILE_SIZE / 1024 / 1024}MB
-              <br />• Maximum title length: {MAX_TITLE_LENGTH} characters
+          <Alert 
+            severity="info" 
+            variant="outlined"
+            sx={{ 
+              mb: 2,
+              '& .MuiAlert-message': { width: '100%' }
+            }}
+          >
+            <Typography component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+              <span>• Supported file types: {ALLOWED_FILE_TYPES.join(", ")}</span>
+              <span>• Maximum file size per file: {MAX_SINGLE_FILE_SIZE / 1024 / 1024}MB</span>
+              <span>• Maximum total file size: {MAX_TOTAL_FILE_SIZE / 1024 / 1024}MB</span>
+              <span>• Maximum title length: {MAX_TITLE_LENGTH} characters</span>
             </Typography>
           </Alert>
+  
           {newLesson.resources.length > 0 && (
-            <Alert severity="info" sx={{ mb: 2 }}>
-              Total size:{" "}
-              {(
-                calculateTotalFileSize(newLesson.resources, -1, null) /
-                1024 /
-                1024
-              ).toFixed(2)}
-              MB / {MAX_TOTAL_FILE_SIZE / 1024 / 1024}MB
+            <Alert 
+              severity="info"
+              variant="outlined" 
+              sx={{ mb: 2 }}
+            >
+              Total size: {(calculateTotalFileSize(newLesson.resources, -1, null) / 1024 / 1024).toFixed(2)}MB 
+              / {MAX_TOTAL_FILE_SIZE / 1024 / 1024}MB
             </Alert>
           )}
-          <Grid container spacing={2}>
+  
+          <Grid container spacing={2} sx={{ mb: 2 }}>
             {newLesson.resources.map((resource, index) => (
-              <Grid
-                item
-                xs={12}
-                md={6}
-                key={index}
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  bgcolor: "background.paper",
-                  borderRadius: 1,
-                  p: 2,
-                }}
-              >
-                <TextField
-                  label="Resource Title"
-                  value={resource.title}
-                  onChange={(e) =>
-                    handleResourceTitleChange(index, e.target.value)
-                  }
-                  error={Boolean(errors.resources[index])}
-                  helperText={
-                    errors.resources[index] ||
-                    `Max ${MAX_TITLE_LENGTH} characters`
-                  }
-                  sx={{ flexGrow: 1 }}
-                  inputProps={{ maxLength: MAX_TITLE_LENGTH }}
-                />
-                <Box
+              <Grid item xs={12} md={6} key={index}>
+                <Paper
+                  elevation={0}
                   sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: 2,
-                    flexWrap: "wrap",
-                    alignItems: "center",
+                    p: 3,
+                    bgcolor: "grey.50",
+                    border: '1px solid',
+                    borderColor: errors.resources[index] ? 'error.main' : 'grey.200',
+                    borderRadius: 1,
                   }}
                 >
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<CloudUpload />}
-                  >
-                    Upload
-                    <input
-                      type="file"
-                      hidden
-                      accept={ALLOWED_FILE_TYPES.map((ext) => `.${ext}`).join(
-                        ","
-                      )}
-                      onChange={(e) => {
-                        if (e.target.files[0]) {
-                          handleFileChange(index, e.target.files[0]);
-                        }
+                  <Stack spacing={2}>
+                    <TextField
+                      label="Resource Title"
+                      value={resource.title}
+                      onChange={(e) => handleResourceTitleChange(index, e.target.value)}
+                      error={Boolean(errors.resources[index])}
+                      helperText={errors.resources[index] || `Max ${MAX_TITLE_LENGTH} characters`}
+                      fullWidth
+                      size="small"
+                      inputProps={{ maxLength: MAX_TITLE_LENGTH }}
+                      sx={{
+                        '& .MuiOutlinedInput-root': {
+                          backgroundColor: 'white',
+                          '&.Mui-focused fieldset': {
+                            borderColor: '#14213d',
+                          },
+                        },
                       }}
                     />
-                  </Button>
-                  {resource.file && (
-                    <Chip
-                      label={`${resource.file.name} (${(
-                        resource.file.size /
-                        1024 /
-                        1024
-                      ).toFixed(2)}MB)`}
-                      onDelete={() => handleResourceChange(index, "file", null)}
-                      sx={{ maxWidth: "100%" }}
-                    />
-                  )}
-                  <Tooltip title="Remove Resource" arrow>
-                    <IconButton
-                      onClick={() => handleRemoveResource(index)}
-                      color="error"
-                      size="small"
-                    >
-                      <Delete />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
+  
+                    <Box sx={{ 
+                      display: "flex", 
+                      alignItems: "center", 
+                      gap: 1,
+                      flexWrap: "wrap" 
+                    }}>
+                      <Button
+                        variant="outlined"
+                        component="label"
+                        startIcon={<CloudUpload />}
+                        size="small"
+                        sx={{
+                          borderColor: '#14213d',
+                          color: '#14213d',
+                          backgroundColor: 'white',
+                          '&:hover': {
+                            borderColor: '#fca311',
+                            backgroundColor: 'white',
+                          },
+                        }}
+                      >
+                        Upload
+                        <input
+                          type="file"
+                          hidden
+                          accept={ALLOWED_FILE_TYPES.map((ext) => `.${ext}`).join(",")}
+                          onChange={(e) => {
+                            if (e.target.files[0]) {
+                              handleFileChange(index, e.target.files[0]);
+                            }
+                          }}
+                        />
+                      </Button>
+  
+                      {resource.file && (
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Chip
+                            label={`${resource.file.name} (${(
+                              resource.file.size / 1024 / 1024
+                            ).toFixed(2)}MB)`}
+                            onDelete={() => handleResourceChange(index, "file", null)}
+                            sx={{
+                              maxWidth: '100%',
+                              '.MuiChip-label': {
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                              }
+                            }}
+                          />
+                        </Box>
+                      )}
+  
+                      <Tooltip title="Remove Resource" arrow>
+                        <IconButton
+                          onClick={() => handleRemoveResource(index)}
+                          color="error"
+                          size="small"
+                          sx={{
+                            '&:hover': {
+                              backgroundColor: 'error.light',
+                              color: 'white',
+                            },
+                          }}
+                        >
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </Stack>
+                </Paper>
               </Grid>
             ))}
           </Grid>
+  
           <Button
             startIcon={<Add />}
             onClick={handleAddResource}
             variant="outlined"
-            sx={{ mt: 2 }}
+            sx={{
+              borderColor: '#14213d',
+              color: '#14213d',
+              '&:hover': {
+                borderColor: '#fca311',
+                backgroundColor: 'rgba(252, 163, 17, 0.04)',
+              },
+            }}
           >
             Add Resource
           </Button>
