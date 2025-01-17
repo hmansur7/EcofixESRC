@@ -1,16 +1,8 @@
-# This tells Netlify how to build your app and where to find the output folder
 [build]
-  # Command to build your frontend (React app, for example)
-  command = "npm run build"  # Or "yarn build" if using Yarn
-  
-  # Folder that will be deployed
-  publish = "build"  # React app output folder
+  publish = "build"  
 
-  # If your backend is Django, you need to make sure static files and the proper directory are handled
-  # If you're using serverless functions for Django, you would configure that here as well.
 
 [[redirects]]
-  # This handles client-side routing for your React app
   from = "/*"
   to = "/index.html"
   status = 200
