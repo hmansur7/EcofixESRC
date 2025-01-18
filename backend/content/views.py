@@ -15,7 +15,7 @@ from django.db import transaction
 from django.forms import ValidationError
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status, viewsets
 from rest_framework.authtoken.models import Token
 from rest_framework.generics import ListAPIView, CreateAPIView, DestroyAPIView
@@ -204,25 +204,16 @@ class VerifyEmailView(APIView):
             verification.is_used = True
             verification.save()
 
-            token, _ = Token.objects.get_or_create(user=user)
+            # Generate JWT tokens
+            refresh = RefreshToken.for_user(user)
 
             response = Response({
                 'message': 'Email verified successfully',
+                'access_token': str(refresh.access_token),
                 'role': user.role,
                 'name': user.name,
                 'email': user.email
             })
-
-            response.set_cookie(
-                'auth_token',
-                token.key,
-                max_age=60*60*24*7,    
-                httponly=True,
-                samesite='Lax',
-                secure=False,           # False for development
-                domain='127.0.0.1',
-                path='/'
-            )
 
             return response
 
@@ -326,18 +317,14 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
                 
+from rest_framework_simplejwt.tokens import RefreshToken
+
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         email = request.data.get("email")
         password = request.data.get("password")
-
-        if not all([email, password]):
-            return Response(
-                {"error": "Email and password are required."}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         try:
             user = AppUser.objects.get(email=email)
@@ -355,36 +342,17 @@ class LoginView(APIView):
                     "email": user.email
                 }, status=status.HTTP_403_FORBIDDEN)
 
-            token, _ = Token.objects.get_or_create(user=user)
-            
-            response = Response({
+            # Generate tokens with custom payload
+            refresh = RefreshToken.for_user(user)
+            refresh['role'] = user.role
+            refresh['name'] = user.name
+
+            return Response({
+                "access_token": str(refresh.access_token),
                 "role": user.role,
                 "name": user.name,
                 "email": user.email
             })
-
-            response.set_cookie(
-                'auth_token',
-                token.key,
-                domain='127.0.0.1',        
-                path='/',                  
-                max_age=60*60*24*7,        
-                httponly=True,
-                samesite='Lax',
-                secure=False               # Set to True in production
-            )
-
-            response.set_cookie(
-                'persistent_auth',
-                'true',
-                max_age=60*60*24*7,    # 7 days
-                httponly=True,
-                samesite='Lax',
-                secure=False,
-                domain='127.0.0.1',
-                path='/'
-            )
-            return response
 
         except AppUser.DoesNotExist:
             return Response(
@@ -396,13 +364,25 @@ class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        if request.user.auth_token:
-            request.user.auth_token.delete()
+        try:
+            # Get the refresh token from the request
+            refresh_token = request.data.get('refresh_token')
+            
+            if refresh_token:
+                # Blacklist the refresh token
+                token = RefreshToken(refresh_token)
+                token.blacklist()
+            
+            response = Response({
+                "message": "Successfully logged out."
+            })
+            
+            return response
         
-        response = Response({"message": "Successfully logged out."})
-        response.delete_cookie(settings.COOKIE_NAME)
-        
-        return response
+        except Exception as e:
+            return Response({
+                "error": "Logout failed."
+            }, status=status.HTTP_400_BAD_REQUEST)
     
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer

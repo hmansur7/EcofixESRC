@@ -31,22 +31,57 @@ const VerifyEmail = () => {
         try {
             setLoading(true);
             const response = await verifyEmail(token);
+                        
+            // Store JWT tokens
+            if (response.access_token) {
+                localStorage.setItem('access_token', response.access_token);
+            }
             
+            if (response.refresh_token) {
+                localStorage.setItem('refresh_token', response.refresh_token);
+            }
+    
+            // Store user information
             if (response.role) {
                 localStorage.setItem("userRole", response.role);
                 localStorage.setItem("userName", response.name);  
                 localStorage.setItem("userEmail", response.email);  
             }
             
-            setStatus("success");
+            // Remove pending verification
             localStorage.removeItem("pendingVerification");
             
+            setStatus("success");
+            
+            // Determine redirect based on role
             setTimeout(() => {
-                navigate("/learning");
+                if (response.role === "admin") {
+                    localStorage.setItem("viewMode", "admin");
+                    navigate("/admin/dashboard");
+                } else {
+                    localStorage.removeItem("viewMode");
+                    navigate("/learning");
+                }
             }, 2000);
-        } catch (error) {
+        } catch (error) {            
             setStatus("error");
-            setError(error.response?.data?.error || "Verification failed");
+            
+            // More detailed error handling
+            if (error.response) {
+                // Server responded with an error
+                if (error.response.status === 400) {
+                    setError(error.response.data.error || "Invalid or expired verification token");
+                } else if (error.response.status === 403) {
+                    setError("Email verification failed. Please try again.");
+                } else {
+                    setError("An unexpected error occurred during verification");
+                }
+            } else if (error.message) {
+                // Network error or other client-side error
+                setError(error.message);
+            } else {
+                setError("Verification failed. Please try again.");
+            }
         } finally {
             setLoading(false);
         }

@@ -109,22 +109,29 @@ const Login = () => {
       const role = response.role;    
 
       if (role === "admin") {
+        localStorage.setItem("viewMode", "admin");
         navigate("/admin/dashboard");
       } else {
+        localStorage.removeItem("viewMode");
         navigate("/learning");
       }
     } catch (error) {
-      if (error.needsVerification || 
-        (error.message && error.message.toLowerCase().includes('verify'))) {
-      localStorage.setItem("pendingVerification", formData.email);
-      navigate("/verify-email", { 
-        state: { email: formData.email }
-      });
-      return;
+      // Check for email verification requirement
+      if (
+        error.message.toLowerCase().includes('verify') || 
+        error.message.toLowerCase().includes('email')
+      ) {
+        localStorage.setItem("pendingVerification", formData.email);
+        navigate("/verify-email", { 
+          state: { email: formData.email }
+        });
+        return;
       } 
-        setApiError(
-          error.message || "Login failed. Please check your credentials."
-        );
+      
+      // Handle other login errors
+      setApiError(
+        error.message || "Login failed. Please check your credentials."
+      );
     } finally {
       setLoading(false);
     }

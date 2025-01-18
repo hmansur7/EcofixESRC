@@ -1,32 +1,79 @@
 // frontend/src/services/api.js
 import axios from "axios";
 import { clearAuthData, setAuthData } from '../utils/auth';
-
+import { jwtDecode } from 'jwt-decode';
 
 const API = axios.create({
     baseURL: process.env.REACT_APP_API_URL, 
-    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
 });
 
+// Add an interceptor to add the JWT token to every request
+API.interceptors.request.use(
+    (config) => {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            config.headers['Authorization'] = `Bearer ${token}`;
+        }
+        return config;
+    },
+    (error) => {
+        return Promise.reject(error);
+    }
+);
+
+
 export const loginUser = async (email, password) => {
     try {
-        clearAuthData();
+
         const response = await API.post("auth/login/", { email, password });        
-        if (response.data) {
-            localStorage.setItem("userName", response.data.name);
-            localStorage.setItem("userEmail", response.data.email);
-            localStorage.setItem("userRole", response.data.role);
+
+        const { access_token, refresh_token, role, name, email: responseEmail } = response.data;
+
+        if (!access_token) {
+            throw new Error('Login failed: No access token received');
         }
-        return response.data;
-    } catch (error) {
-        if (error.response?.data?.error) {
-            throw new Error(error.response.data.error);
+
+        // Decode token to verify roles and payload
+        const decoded = jwtDecode(access_token);
+
+        // Store access token
+        localStorage.setItem('access_token', access_token);
+        localStorage.setItem('refresh_token', refresh_token);
+
+        // Store user info
+        localStorage.setItem("userName", name);
+        localStorage.setItem("userEmail", responseEmail);
+        localStorage.setItem("userRole", role);
+
+        return {
+            name,
+            email: responseEmail,
+            role
+        };
+    } catch (error) {        
+        // More specific error handling
+        if (error.response) {
+            if (error.response.status === 403) {
+                if (error.response.data.needsVerification) {
+                    throw new Error('Please verify your email before logging in');
+                }
+            } else if (error.response.status === 404) {
+                throw new Error('No account found with this email address');
+            } else if (error.response.status === 400) {
+                throw new Error(error.response.data.error || 'Incorrect email or password');
+            }
         }
-        throw new Error('Login failed');
+        
+        // Generic error fallback
+        throw new Error(
+            error.response?.data?.error || 
+            error.message || 
+            'Login failed. Please try again.'
+        );
     }
 };
 
@@ -38,13 +85,8 @@ export const registerUser = async (name, email, password) => {
 export const verifyEmail = async (token) => {
     try {
         const response = await API.post("auth/verify-email/", { token });
-        if (response.data) {
-            clearAuthData(); 
-            setAuthData(response.data);
-        }
         return response.data;
     } catch (error) {
-        clearAuthData();
         throw error;
     }
 };
@@ -69,12 +111,46 @@ export const changePassword = async (currentPassword, newPassword) => {
 
 export const logoutUser = async () => {
     try {
-        await API.post("auth/logout/");
-        clearAuthData(); 
-        window.location.href = '/';
+        const refreshToken = localStorage.getItem('refresh_token');
+        
+        await API.post("auth/logout/", { 
+            refresh_token: refreshToken 
+        });
     } catch (error) {
-        clearAuthData(); 
+    } finally {
+        // Clear all stored data
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        localStorage.removeItem('userName');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userRole');
+        localStorage.removeItem('viewMode');
+        
         window.location.href = '/';
+    }
+};
+
+const isTokenExpired = (token) => {
+    try {
+        const decoded = jwtDecode(token);
+        return decoded.exp < Date.now() / 1000;
+    } catch (error) {
+        return true;
+    }
+};
+
+export const getUserRole = () => {
+    const token = localStorage.getItem('access_token');
+    
+    if (!token || isTokenExpired(token)) {
+        return null;
+    }
+    
+    try {
+        const decoded = jwtDecode(token);
+        return decoded.role;
+    } catch (error) {
+        return null;
     }
 };
 
