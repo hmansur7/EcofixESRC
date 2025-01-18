@@ -10,7 +10,7 @@ VirtuLearn is a comprehensive Learning Management System (LMS) built with React 
 - Email verification for new accounts
 - Role-based access control (Student/Instructor)
 - Password change functionality
-- Persistent authentication using secure HTTP-only cookies
+- Authentication using simple JWT tokens
 
 ### Student Features
 - Browse available courses with filtering options
@@ -67,11 +67,9 @@ VirtuLearn is a comprehensive Learning Management System (LMS) built with React 
 
 ## Security Features
 - Password hashing using Django's authentication system
-- CSRF protection
-- HTTP-only cookies for authentication
+- JWT for authentication
 - Input validation and sanitization
 - File upload restrictions and validation
-- Rate limiting on authentication endpoints
 
 ## Project Structure
 ```
