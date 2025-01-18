@@ -12,14 +12,15 @@ const isTokenExpired = (token) => {
 
 const PrivateRoute = ({ children }) => {
     const token = localStorage.getItem("access_token");
+    const needsVerification = localStorage.getItem("pendingVerification");
 
     if (!token || isTokenExpired(token)) {
+        localStorage.clear();
         return <Navigate to="/login" />;
     }
 
-    const pendingVerification = localStorage.getItem("pendingVerification");
-    if (pendingVerification) {
-        return <Navigate to="/verify-email" />;
+    if (needsVerification) {
+        return <Navigate to="/verify-email" state={{ email: needsVerification }} />;
     }
 
     return children;

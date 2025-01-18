@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
     Box,
@@ -8,6 +8,7 @@ import {
     Alert,
     CircularProgress,
     Paper,
+    Fade,
 } from "@mui/material";
 import { MailOutline } from "@mui/icons-material";
 import { verifyEmail, resendVerificationEmail } from "../services/api";
@@ -16,10 +17,25 @@ const VerifyEmail = () => {
     const [status, setStatus] = useState("pending");
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [resendCooldown, setResendCooldown] = useState(0);
     const { token } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const email = location.state?.email || localStorage.getItem("pendingVerification");
+
+    const startResendCooldown = useCallback(() => {
+        setResendCooldown(6);
+        const timer = setInterval(() => {
+            setResendCooldown(prev => {
+                if (prev <= 1) {
+                    clearInterval(timer);
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+        return () => clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         if (token) {
@@ -30,57 +46,45 @@ const VerifyEmail = () => {
     const verifyToken = async () => {
         try {
             setLoading(true);
+            setError("");
             const response = await verifyEmail(token);
-                        
-            // Store JWT tokens
-            if (response.access_token) {
-                localStorage.setItem('access_token', response.access_token);
-            }
             
-            if (response.refresh_token) {
-                localStorage.setItem('refresh_token', response.refresh_token);
+            if (!response.access_token || !response.role) {
+                throw new Error("Invalid server response");
             }
-    
-            // Store user information
-            if (response.role) {
-                localStorage.setItem("userRole", response.role);
-                localStorage.setItem("userName", response.name);  
-                localStorage.setItem("userEmail", response.email);  
-            }
+
+            // Store authentication data
+            localStorage.setItem('access_token', response.access_token);
+            localStorage.setItem('refresh_token', response.refresh_token);
+            localStorage.setItem("userRole", response.role);
+            localStorage.setItem("userName", response.name);
+            localStorage.setItem("userEmail", response.email);
             
-            // Remove pending verification
+            // Clear verification state
             localStorage.removeItem("pendingVerification");
             
             setStatus("success");
             
-            // Determine redirect based on role
+            // Redirect based on role
             setTimeout(() => {
+                const redirectPath = response.role === "admin" ? "/admin/dashboard" : "/learning";
                 if (response.role === "admin") {
                     localStorage.setItem("viewMode", "admin");
-                    navigate("/admin/dashboard");
                 } else {
                     localStorage.removeItem("viewMode");
-                    navigate("/learning");
                 }
+                navigate(redirectPath);
             }, 2000);
+
         } catch (error) {            
             setStatus("error");
             
-            // More detailed error handling
-            if (error.response) {
-                // Server responded with an error
-                if (error.response.status === 400) {
-                    setError(error.response.data.error || "Invalid or expired verification token");
-                } else if (error.response.status === 403) {
-                    setError("Email verification failed. Please try again.");
-                } else {
-                    setError("An unexpected error occurred during verification");
-                }
+            if (error.response?.data?.error) {
+                setError(error.response.data.error);
             } else if (error.message) {
-                // Network error or other client-side error
                 setError(error.message);
             } else {
-                setError("Verification failed. Please try again.");
+                setError("Verification failed. Please try again or request a new verification email.");
             }
         } finally {
             setLoading(false);
@@ -93,17 +97,51 @@ const VerifyEmail = () => {
             return;
         }
 
+        if (resendCooldown > 0) {
+            return;
+        }
+
         try {
             setLoading(true);
+            setError("");
             await resendVerificationEmail(email);
             setStatus("resent");
-            setError("");
+            startResendCooldown();
         } catch (error) {
-            setError(error.response?.data?.error || "Failed to resend verification email");
+            if (error.response?.data?.error) {
+                setError(error.response.data.error);
+            } else {
+                setError("Failed to resend verification email. Please try again later.");
+            }
         } finally {
             setLoading(false);
         }
     };
+
+    const renderResendButton = () => (
+        <Button
+            variant="contained"
+            onClick={handleResendVerification}
+            disabled={loading || resendCooldown > 0}
+            sx={{
+                mt: 2,
+                mb: 2,
+                backgroundColor: "#14213d",
+                "&:hover": { backgroundColor: "#fca311" },
+                "&.Mui-disabled": {
+                    backgroundColor: "rgba(0, 0, 0, 0.12)",
+                },
+            }}
+        >
+            {loading ? (
+                <CircularProgress size={24} sx={{ color: "white" }} />
+            ) : resendCooldown > 0 ? (
+                `Wait ${resendCooldown}s to resend`
+            ) : (
+                "Resend Verification Email"
+            )}
+        </Button>
+    );
 
     return (
         <Container component="main" maxWidth="sm">
@@ -123,66 +161,89 @@ const VerifyEmail = () => {
                         flexDirection: "column",
                         alignItems: "center",
                         width: "100%",
+                        position: "relative",
                     }}
                 >
                     <MailOutline
-                        sx={{ fontSize: 50, color: "#14213d", mb: 2 }}
+                        sx={{ 
+                            fontSize: 50, 
+                            color: "#14213d", 
+                            mb: 2,
+                            animation: "bounce 2s infinite"
+                        }}
                     />
+                    
                     {!token ? (
-                        <>
-                            <Typography variant="h5" component="h1" gutterBottom>
-                                Verify Your Email
-                            </Typography>
-                            <Typography align="center" sx={{ mb: 3 }}>
-                                We've sent a verification link to {email}. Please check your
-                                email and click the link to verify your account.
-                            </Typography>
-                            <Button
-                                variant="contained"
-                                onClick={handleResendVerification}
-                                disabled={loading}
-                                sx={{
-                                    mt: 2,
-                                    mb: 2,
-                                    backgroundColor: "#14213d",
-                                    "&:hover": { backgroundColor: "#fca311" },
-                                }}
-                            >
-                                {loading ? (
-                                    <CircularProgress size={24} sx={{ color: "white" }} />
-                                ) : (
-                                    "Resend Verification Email"
+                        <Fade in={true}>
+                            <Box sx={{ width: "100%", textAlign: "center" }}>
+                                <Typography variant="h5" component="h1" gutterBottom>
+                                    Verify Your Email
+                                </Typography>
+                                {email && (
+                                    <Typography 
+                                        variant="h6" 
+                                        sx={{ 
+                                            mb: 3,
+                                            color: "#14213d",
+                                            wordBreak: "break-word"
+                                        }}
+                                    >
+                                        {email}
+                                    </Typography>
                                 )}
-                            </Button>
-                        </>
+                                <Typography align="center" sx={{ mb: 3 }}>
+                                    Please check your email and click the verification link to activate your account.
+                                </Typography>
+                                {renderResendButton()}
+                            </Box>
+                        </Fade>
                     ) : (
-                        <>
-                            {loading && <CircularProgress sx={{ mb: 2 }} />}
-                            {status === "success" && (
-                                <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
-                                    Email verified successfully! Redirecting to dashboard...
+                        <Fade in={true}>
+                            <Box sx={{ width: "100%", textAlign: "center" }}>
+                                {loading && <CircularProgress sx={{ mb: 2 }} />}
+                                {status === "success" && (
+                                    <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
+                                        Email verified successfully! Redirecting to dashboard...
+                                    </Alert>
+                                )}
+                            </Box>
+                        </Fade>
+                    )}
+                    
+                    <Fade in={Boolean(error)}>
+                        <Box sx={{ width: "100%" }}>
+                            {error && (
+                                <Alert severity="error" sx={{ mt: 2 }}>
+                                    {error}
                                 </Alert>
                             )}
-                        </>
-                    )}
-                    {error && (
-                        <Alert severity="error" sx={{ width: "100%", mt: 2 }}>
-                            {error}
+                        </Box>
+                    </Fade>
+                    
+                    <Fade in={status === "resent"}>
+                        <Box sx={{ width: "100%" }}>
+                            {status === "resent" && (
+                                <Alert severity="success" sx={{ mt: 2 }}>
+                                    Verification email has been resent. Please check your inbox.
+                                </Alert>
+                            )}
+                        </Box>
+                    </Fade>
+
+                    {!token && (
+                        <Alert severity="info" sx={{ width: "100%", mt: 2 }}>
+                            Already verified? You can proceed to login.
                         </Alert>
                     )}
-                    {status === "resent" && (
-                        <Alert severity="success" sx={{ width: "100%", mt: 2 }}>
-                            Verification email has been resent. Please check your inbox.
-                        </Alert>
-                    )}
-                    <Alert severity="info" sx={{ width: "100%", mt: 2 }}>
-                        If you have already verified your email, please proceed to login.
-                    </Alert>
+
                     <Button
                         sx={{
                             mt: 2,
                             color: "#fca311",
-                            "&:hover": { backgroundColor: "transparent", textDecoration: "underline" },
+                            "&:hover": {
+                                backgroundColor: "transparent",
+                                textDecoration: "underline",
+                            },
                         }}
                         onClick={() => navigate("/login")}
                     >
@@ -190,6 +251,21 @@ const VerifyEmail = () => {
                     </Button>
                 </Paper>
             </Box>
+            <style>
+                {`
+                    @keyframes bounce {
+                        0%, 20%, 50%, 80%, 100% {
+                            transform: translateY(0);
+                        }
+                        40% {
+                            transform: translateY(-10px);
+                        }
+                        60% {
+                            transform: translateY(-5px);
+                        }
+                    }
+                `}
+            </style>
         </Container>
     );
 };

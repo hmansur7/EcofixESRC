@@ -1,22 +1,49 @@
 // frontend/src/services/api.js
 import axios from "axios";
-import { clearAuthData, setAuthData } from '../utils/auth';
 import { jwtDecode } from 'jwt-decode';
+import { clearAuthData } from "../utils/auth";
 
 const API = axios.create({
-    baseURL: process.env.REACT_APP_API_URL, 
+    baseURL: process.env.REACT_APP_API_URL,
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
     }
 });
 
-// Add an interceptor to add the JWT token to every request
+// Request interceptor
 API.interceptors.request.use(
-    (config) => {
+    async (config) => {
         const token = localStorage.getItem('access_token');
         if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
+            // Check if token is expired
+            try {
+                const decoded = jwtDecode(token);
+                if (decoded.exp < Date.now() / 1000) {
+                    // Token is expired, attempt to refresh
+                    const refreshToken = localStorage.getItem('refresh_token');
+                    if (refreshToken) {
+                        try {
+                            const response = await axios.post(
+                                `${process.env.REACT_APP_API_URL}/auth/refresh/`, 
+                                { refresh: refreshToken }
+                            );
+                            const newToken = response.data.access;
+                            localStorage.setItem('access_token', newToken);
+                            config.headers.Authorization = `Bearer ${newToken}`;
+                        } catch (error) {
+                            // Refresh failed, redirect to login
+                            localStorage.clear();
+                            window.location.href = '/login';
+                            return Promise.reject(error);
+                        }
+                    }
+                } else {
+                    config.headers.Authorization = `Bearer ${token}`;
+                }
+            } catch (error) {
+                console.error('Error processing token:', error);
+            }
         }
         return config;
     },
@@ -25,54 +52,90 @@ API.interceptors.request.use(
     }
 );
 
+// Response interceptor
+API.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        const originalRequest = error.config;
+
+        // If error is 401 and we haven't tried to refresh yet
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            originalRequest._retry = true;
+            
+            try {
+                const refreshToken = localStorage.getItem('refresh_token');
+                if (refreshToken) {
+                    const response = await axios.post(
+                        `${process.env.REACT_APP_API_URL}/auth/refresh/`,
+                        { refresh: refreshToken }
+                    );
+                    const newToken = response.data.access;
+                    
+                    localStorage.setItem('access_token', newToken);
+                    API.defaults.headers.common['Authorization'] = `Bearer ${newToken}`;
+                    originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+                    
+                    return API(originalRequest);
+                }
+            } catch (refreshError) {
+                // If refresh fails, clear storage and redirect to login
+                localStorage.clear();
+                window.location.href = '/login';
+                return Promise.reject(refreshError);
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 
 export const loginUser = async (email, password) => {
     try {
-
         const response = await API.post("auth/login/", { email, password });        
 
-        const { access_token, refresh_token, role, name, email: responseEmail } = response.data;
+        // Check if user needs verification
+        if (!response.data.is_verified) {
+            localStorage.setItem("pendingVerification", email);
+            throw {
+                needsVerification: true,
+                email: email,
+                message: "Please verify your email before logging in"
+            };
+        }
+
+        const { access_token, refresh_token, role, name, email: userEmail } = response.data;
 
         if (!access_token) {
             throw new Error('Login failed: No access token received');
         }
 
-        // Decode token to verify roles and payload
-        const decoded = jwtDecode(access_token);
-
-        // Store access token
+        // Store tokens and user info
         localStorage.setItem('access_token', access_token);
         localStorage.setItem('refresh_token', refresh_token);
-
-        // Store user info
         localStorage.setItem("userName", name);
-        localStorage.setItem("userEmail", responseEmail);
+        localStorage.setItem("userEmail", userEmail);
         localStorage.setItem("userRole", role);
 
-        return {
-            name,
-            email: responseEmail,
-            role
-        };
-    } catch (error) {        
-        // More specific error handling
-        if (error.response) {
-            if (error.response.status === 403) {
-                if (error.response.data.needsVerification) {
-                    throw new Error('Please verify your email before logging in');
-                }
-            } else if (error.response.status === 404) {
-                throw new Error('No account found with this email address');
-            } else if (error.response.status === 400) {
-                throw new Error(error.response.data.error || 'Incorrect email or password');
-            }
+        if (role === 'admin') {
+            localStorage.setItem("viewMode", "admin");
+        }
+
+        return response.data;
+    } catch (error) {
+        // Special handling for unverified users
+        if (error.needsVerification) {
+            throw error;
         }
         
-        // Generic error fallback
+        // Handle other error cases
+        if (error.response?.status === 404) {
+            throw new Error('No account found with this email address.');
+        }
+        
         throw new Error(
             error.response?.data?.error || 
             error.message || 
-            'Login failed. Please try again.'
+            'Login failed. Please check your credentials.'
         );
     }
 };

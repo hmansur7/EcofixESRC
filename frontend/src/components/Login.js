@@ -93,24 +93,35 @@ const Login = () => {
     e.preventDefault();
     setApiError("");
 
+    if (!validateForm()) {
+        return;
+    }
+
     try {
-        const response = await loginUser(formData.email, formData.password);
-        
-        if (response.role === "admin") {
+        setLoading(true);
+        await loginUser(formData.email, formData.password);
+        const role = localStorage.getItem("userRole");
+
+        if (role === "admin") {
             navigate("/admin/dashboard");
         } else {
             navigate("/learning");
         }
     } catch (error) {
         if (error.needsVerification) {
+            // Store email for verification and redirect
             localStorage.setItem("pendingVerification", formData.email);
             navigate("/verify-email", { 
                 state: { email: formData.email }
             });
             return;
-        } 
-        
-        setApiError(error.message);
+        }
+
+        setApiError(
+            error.message || "Login failed. Please check your credentials."
+        );
+    } finally {
+        setLoading(false);
     }
 };
 

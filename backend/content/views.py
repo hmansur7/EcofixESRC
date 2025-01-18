@@ -208,6 +208,9 @@ class VerifyEmailView(APIView):
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
+            refresh['role'] = user.role
+            refresh['name'] = user.name
+            refresh['email'] = user.email
             
             return Response({
                 'message': 'Email verified successfully',
@@ -238,8 +241,15 @@ class ResendVerificationView(APIView):
             
             # If user is already verified, allow login
             if user.is_verified:
+                refresh = RefreshToken.for_user(user)
+                refresh['role'] = user.role
+                refresh['name'] = user.name
+                refresh['email'] = user.email
+                
                 return Response({
                     'message': 'Account is already verified. You can log in.',
+                    'access_token': str(refresh.access_token),
+                    'refresh_token': str(refresh),
                     'can_login': True
                 })
 
@@ -304,10 +314,17 @@ class ChangePasswordView(APIView):
             user.set_password(new_password)
             user.save()
 
-            return Response(
-                {"message": "Password changed successfully."}, 
-                status=status.HTTP_200_OK
-            )
+            # Generate new JWT tokens after password change
+            refresh = RefreshToken.for_user(user)
+            refresh['role'] = user.role
+            refresh['name'] = user.name
+            refresh['email'] = user.email
+
+            return Response({
+                "message": "Password changed successfully.",
+                "access_token": str(refresh.access_token),
+                "refresh_token": str(refresh)
+            }, status=status.HTTP_200_OK)
 
         except ValidationError as e:
             return Response(
@@ -336,33 +353,27 @@ class LoginView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Check if user is verified, even if no verification tokens exist
             if not user.is_verified:
-                # Check if any verification tokens exist
-                existing_tokens = EmailVerificationToken.objects.filter(
-                    user=user, 
-                    is_used=False, 
-                    expires_at__gt=timezone.now()
-                )
-                
-                if existing_tokens.exists():
-                    return Response({
-                        "error": "Please verify your email before logging in.",
-                        "needsVerification": True,
-                        "email": user.email
-                    }, status=status.HTTP_403_FORBIDDEN)
-                else:
-                    # No active verification tokens, mark as verified
-                    user.is_verified = True
-                    user.save()
+                return Response({
+                    "error": "Please verify your email before logging in.",
+                    "needsVerification": True,
+                    "email": user.email
+                }, status=status.HTTP_403_FORBIDDEN)
 
+            # Generate tokens
             refresh = RefreshToken.for_user(user)
             
+            # Add custom claims
+            refresh['role'] = user.role
+            refresh['name'] = user.name
+            refresh['email'] = user.email
+
             return Response({
-                "access_token": str(refresh.access_token),
-                "role": user.role,
-                "name": user.name,
-                "email": user.email
+                'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
+                'role': user.role,
+                'name': user.name,
+                'email': user.email
             })
 
         except AppUser.DoesNotExist:
@@ -394,6 +405,7 @@ class LogoutView(APIView):
             return Response({
                 "error": "Logout failed."
             }, status=status.HTTP_400_BAD_REQUEST)
+
     
 class CourseViewSet(viewsets.ModelViewSet):
     serializer_class = CourseSerializer

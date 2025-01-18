@@ -2,6 +2,7 @@
 from django.urls import path, include
 from django.contrib import admin
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import TokenRefreshView
 from content.views import (
     UserViewSet, 
     CourseViewSet,  
@@ -34,6 +35,7 @@ from content.views import (
     EnrollCourseView,
     AdminUpdateCourseVisibilityView,
     AdminUpdateCourseView,
+    TokenRefreshView
 )
 from django.conf import settings
 from django.conf.urls.static import static
@@ -54,7 +56,8 @@ urlpatterns = [
     path('api/auth/resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
     path('api/auth/change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('api/auth/logout/', LogoutView.as_view(), name='logout'),
-    
+    path('api/auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
     # Course and Lesson endpoints
     path('api/lessons/<int:lesson_id>/progress/', UpdateLessonProgressView.as_view(), name='update-lesson-progress'),
     path('api/courses/<int:course_id>/progress/', GetCourseProgressView.as_view(), name='get-course-progress'),
