@@ -83,9 +83,9 @@ project/
 │   └── public/
 └── backend/
     ├── content/
-    │   ├── models/
-    │   ├── views/
-    │   ├── serializers/
-    │   └── permissions/
+    │   ├── models
+    │   ├── views
+    │   ├── serializers
+    │   └── permissions
     └── backend/
 ```
