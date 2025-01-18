@@ -175,6 +175,9 @@ const VerifyEmail = () => {
                             Verification email has been resent. Please check your inbox.
                         </Alert>
                     )}
+                    <Alert severity="info" sx={{ width: "100%", mt: 2 }}>
+                        If you have already verified your email, please proceed to login.
+                    </Alert>
                     <Button
                         sx={{
                             mt: 2,

@@ -93,49 +93,26 @@ const Login = () => {
     e.preventDefault();
     setApiError("");
 
-    const touchedFields = Object.keys(formData).reduce(
-      (acc, field) => ({ ...acc, [field]: true }),
-      {}
-    );
-    setTouched(touchedFields);
-
-    if (!validateForm()) {
-      return;
-    }
-
     try {
-      setLoading(true);
-      const response = await loginUser(formData.email, formData.password);
-      const role = response.role;    
-
-      if (role === "admin") {
-        localStorage.setItem("viewMode", "admin");
-        navigate("/admin/dashboard");
-      } else {
-        localStorage.removeItem("viewMode");
-        navigate("/learning");
-      }
+        const response = await loginUser(formData.email, formData.password);
+        
+        if (response.role === "admin") {
+            navigate("/admin/dashboard");
+        } else {
+            navigate("/learning");
+        }
     } catch (error) {
-      // Check for email verification requirement
-      if (
-        error.message.toLowerCase().includes('verify') || 
-        error.message.toLowerCase().includes('email')
-      ) {
-        localStorage.setItem("pendingVerification", formData.email);
-        navigate("/verify-email", { 
-          state: { email: formData.email }
-        });
-        return;
-      } 
-      
-      // Handle other login errors
-      setApiError(
-        error.message || "Login failed. Please check your credentials."
-      );
-    } finally {
-      setLoading(false);
+        if (error.needsVerification) {
+            localStorage.setItem("pendingVerification", formData.email);
+            navigate("/verify-email", { 
+                state: { email: formData.email }
+            });
+            return;
+        } 
+        
+        setApiError(error.message);
     }
-  };
+};
 
   return (
     <Container component="main" maxWidth="xs">

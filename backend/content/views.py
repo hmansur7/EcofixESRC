@@ -4,7 +4,7 @@ import os
 import re
 from wsgiref.util import FileWrapper
 from django.core.files.storage import default_storage
-
+from rest_framework_simplejwt.tokens import RefreshToken
 from django.conf import settings
 from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
@@ -198,6 +198,8 @@ class VerifyEmailView(APIView):
                 )
 
             user = verification.user
+            
+            # Ensure user is marked as verified, even if process was interrupted
             user.is_verified = True
             user.save()
 
@@ -206,16 +208,15 @@ class VerifyEmailView(APIView):
 
             # Generate JWT tokens
             refresh = RefreshToken.for_user(user)
-
-            response = Response({
+            
+            return Response({
                 'message': 'Email verified successfully',
                 'access_token': str(refresh.access_token),
+                'refresh_token': str(refresh),
                 'role': user.role,
                 'name': user.name,
                 'email': user.email
             })
-
-            return response
 
         except EmailVerificationToken.DoesNotExist:
             return Response(
@@ -235,12 +236,14 @@ class ResendVerificationView(APIView):
         try:
             user = AppUser.objects.get(email=email)
             
+            # If user is already verified, allow login
             if user.is_verified:
-                return Response(
-                    {'error': 'Email is already verified'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+                return Response({
+                    'message': 'Account is already verified. You can log in.',
+                    'can_login': True
+                })
 
+            # Create new verification token
             verification = EmailVerificationToken.objects.create(user=user)
             
             send_verification_email(user, verification.token)
@@ -317,8 +320,6 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
                 
-from rest_framework_simplejwt.tokens import RefreshToken
-
 class LoginView(APIView):
     permission_classes = [AllowAny]
 
@@ -335,18 +336,28 @@ class LoginView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Check if user is verified, even if no verification tokens exist
             if not user.is_verified:
-                return Response({
-                    "error": "Please verify your email before logging in.",
-                    "needsVerification": True,
-                    "email": user.email
-                }, status=status.HTTP_403_FORBIDDEN)
+                # Check if any verification tokens exist
+                existing_tokens = EmailVerificationToken.objects.filter(
+                    user=user, 
+                    is_used=False, 
+                    expires_at__gt=timezone.now()
+                )
+                
+                if existing_tokens.exists():
+                    return Response({
+                        "error": "Please verify your email before logging in.",
+                        "needsVerification": True,
+                        "email": user.email
+                    }, status=status.HTTP_403_FORBIDDEN)
+                else:
+                    # No active verification tokens, mark as verified
+                    user.is_verified = True
+                    user.save()
 
-            # Generate tokens with custom payload
             refresh = RefreshToken.for_user(user)
-            refresh['role'] = user.role
-            refresh['name'] = user.name
-
+            
             return Response({
                 "access_token": str(refresh.access_token),
                 "role": user.role,
