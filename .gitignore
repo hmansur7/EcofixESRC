@@ -1,2 +1,86 @@
+# Python
+__pycache__/
+*/__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+*.so
+.Python
+.coverage
+htmlcov/
+.tox/
 
-backend/content/management/commands/add_admins.py
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+virtualenv/
+
+# Django
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+static/
+*.log
+
+# Node.js - catch all node_modules directories
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+.yarn/
+.pnp.*
+package-lock.json
+
+# Build outputs
+/build/
+/dist/
+*.egg-info/
+*.egg
+.next/
+out/
+
+# Environment variables - all variants
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime*
+.DS_Store
+*.code-workspace
+
+# Temporary files
+*.bak
+*.tmp
+*~
+.sass-cache/
+*.cache
+.eslintcache
+.stylelintcache
+
+# OS specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Testing
+/coverage/
+.nyc_output/
