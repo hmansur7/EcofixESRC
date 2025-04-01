@@ -1,10 +1,11 @@
-.PHONY: up down build migrate makemigrations shell createsuperuser test help
+.PHONY: up down build migrate makemigrations shell createsuperuser test help servers
 
 # Default help command
 help:
 	@echo "VirtuLearn Docker Commands"
 	@echo "--------------------------"
 	@echo "make up               - Start all containers (backend, frontend, db)"
+	@echo "make addr			 - Show backend and frontend server addresses"
 	@echo "make up-backend       - Start only backend and db"
 	@echo "make up-frontend      - Start only frontend"
 	@echo "make down             - Stop all containers"
@@ -18,6 +19,10 @@ help:
 	@echo "make init-data        - Initialize data (add admins, courses, etc.)"
 	@echo "make prod-up          - Start production containers"
 	@echo "make prod-build       - Build production containers"
+
+addr:
+	@echo "Backend server: http://localhost:8000"
+	@echo "Frontend server: http://localhost:3000"
 
 # Development commands
 up:

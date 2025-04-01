@@ -34,7 +34,17 @@ make logs
 
 # Stop all services
 make down
+
 ```
+
+Or if you need help:
+
+```bash
+# Show commands
+make help
+
+```
+
 
 ### Individual Services
 
