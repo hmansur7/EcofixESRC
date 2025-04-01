@@ -1,9 +1,8 @@
 version: '3.8'
 
 services:
-  # Backend Django Service
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     volumes:
@@ -18,8 +17,8 @@ services:
       - DB_NAME=${DB_NAME}
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
-      - DB_HOST=db
-      - DB_PORT=3306
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
       - SECRET_KEY=${SECRET_KEY}
       - EMAIL_HOST=${EMAIL_HOST}
       - EMAIL_PORT=${EMAIL_PORT}
@@ -28,37 +27,35 @@ services:
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD}
       - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL}
       - FRONTEND_URL=${FRONTEND_URL}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS}
     command: /bin/sh -c "python manage.py wait_for_db && python manage.py migrate && python manage.py runserver 0.0.0.0:8000"
     restart: unless-stopped
 
-  # Frontend React Service
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile.dev
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - node_modules:/app/node_modules
     ports:
       - "3000:3000"
     environment:
+      - NODE_ENV=${NODE_ENV}
       - REACT_APP_API_URL=${REACT_APP_API_URL}
     depends_on:
       - backend
     command: npm start
     restart: unless-stopped
 
-  # MySQL Database
   db:
-    image: mysql:8.0
+    image: mysql:8.0.33
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
     environment:
-      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
       - MYSQL_DATABASE=${DB_NAME}
-      - MYSQL_USER=${DB_USER}
-      - MYSQL_PASSWORD=${DB_PASSWORD}
     ports:
       - "3306:3306"
     command: --default-authentication-plugin=mysql_native_password
@@ -68,3 +65,4 @@ volumes:
   mysql_data:
   backend_media:
   backend_static:
+  node_modules:
