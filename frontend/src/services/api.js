@@ -1,7 +1,6 @@
 // frontend/src/services/api.js
 import axios from "axios";
 import { jwtDecode } from 'jwt-decode';
-import { clearAuthData } from "../utils/auth";
 
 const API = axios.create({
     baseURL: process.env.REACT_APP_API_URL,
