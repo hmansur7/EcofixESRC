@@ -11,7 +11,7 @@ This document explains how to use Docker to run the VirtuLearn Learning Manageme
 
 1. Copy the example environment file:
    ```
-   cp .env.example .env
+   cp envexample.txt .env
    ```
 
 2. Edit the `.env` file and update the values as needed for your environment.

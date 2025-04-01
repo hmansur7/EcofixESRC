@@ -1,0 +1,27 @@
+# Database Configuration
+DB_NAME=YourDatabaseName
+DB_USER=YourDatabaseUser
+DB_PASSWORD=YourDatabasePassword
+DB_HOST=YourDatabaseHost
+DB_PORT=YourDatabasePort
+
+# Django Configuration
+SECRET_KEY=YourSecretKey
+DEBUG=YourDebugMode
+ALLOWED_HOSTS=YourAllowedHosts
+
+# Email Configuration
+EMAIL_HOST=YourEmailHost
+EMAIL_PORT=YourEmailPort
+EMAIL_USE_TLS=YourEmailUseTLS
+EMAIL_HOST_USER=YourEmailHostUser
+EMAIL_HOST_PASSWORD=YourEmailHostPassword
+DEFAULT_FROM_EMAIL=YourDefaultFromEmail
+
+# Frontend Configuration
+FRONTEND_URL=yourFrontendURL
+REACT_APP_API_URL=yourAPIURL
+NODE_ENV=yourNodeEnv
+
+# MySQL Root Password
+MYSQL_ROOT_PASSWORD=yourMySQLRootPassword
