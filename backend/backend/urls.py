@@ -35,7 +35,6 @@ from content.views import (
     EnrollCourseView,
     AdminUpdateCourseVisibilityView,
     AdminUpdateCourseView,
-    TokenRefreshView
 )
 from django.conf import settings
 from django.conf.urls.static import static
